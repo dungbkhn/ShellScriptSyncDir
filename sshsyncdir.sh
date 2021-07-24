@@ -19,7 +19,7 @@ destipv6addr="backup@192.168.1.58"
 destipv6addr_scp="backup@[192.168.1.58]"
 
 fileprivatekey=/home/dungnt/.ssh/id_ed25519_privatekey
-logtimedir_remote=/home/dungnt/MyDisk_With_FTP/logtime
+logtimedir_remote=/home/dungnt/StoreProj/logtime
 logtimefile=logtimefile.txt
 #file mang thong tin ds file trong dir --> up len de so sanh
 outputfileforcmp_inremote=outputfile_inremote.txt
@@ -110,19 +110,18 @@ verify_logged() {
 	
 	if [ -f "$fileprivatekey" ] ; then
 	
-		result=$(ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" "$destipv6addr" "tail ${logtimedir_remote}/${logtimefile}")
+		result=$(ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" "$destipv6addr" "tail -n 1 ${logtimedir_remote}/${logtimefile}")
 		cmd=$?
 		echo "$result"
 		
 		if [ "$cmd" -eq 0 ] ; then
-				#echo 'tim thay' $logtimefile
 				if [ "$result" ] ; then
 					curtime=$(($(date +%s%N)/1000000))
-					#printf 'curtime:%s\n' "$curtime"
-					value=$(echo "${result##*$'\n'}")
-					printf 'value:%s\n' "$value"
+					value="$result"
 					delaytime=$(( ( $curtime - $value ) / 60000 ))
+					
 					printf 'delaytime:%s\n' "$delaytime"" minutes"
+					
 					if [ "$delaytime" -gt 6 ] ; then
 						#ko thay active web user
 						kq=0
@@ -893,10 +892,10 @@ mtime=$(date +'%s' -d "$mtime")
 #main
 #find_list_same_files "/home/dungnt/ShellScript/tối quá" "/home/backup/biết sosanh"
 #find_list_same_dirs "/home/dungnt/ShellScript/tối quá" "/home/backup/so sánh thư mục"
-sync_dir "/home/dungnt/ShellScript/tối quá" "/home/backup/so sánh thư mục"
+#sync_dir "/home/dungnt/ShellScript/tối quá" "/home/backup/so sánh thư mục"
 #copy_file "/home/dungnt/ShellScript/tối quá" "/home/backup/so sánh thư mục" "file tét.txt"
 #append_native_file "/home/dungnt/ShellScript/tối quá" "/home/backup/so sánh thư mục" "file tét.txt" 20000000 "$mainhash"
 #copy_file "/home/dungnt/ShellScript/tối quá" "/home/backup/so sánh thư mục" "noi"
 #append_native_file "/home/dungnt/ShellScript/tối quá" "/home/backup/so sánh thư mục" "noi" 1 "$mainhash"
 #copy_file "/home/dungnt/ShellScript/tối quá" "/home/backup/so sánh thư mục" "file500mb.txt"
-#append_native_file "/home/dungnt/ShellScript/tối quá" "/home/backup/so sánh thư mục" "file500mb.txt" 400000000 "$mtime"
+append_native_file "/home/dungnt/ShellScript/tối quá" "/home/backup/so sánh thư mục" "file500mb.txt" 450000000 "$mtime"
