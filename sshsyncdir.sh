@@ -166,11 +166,14 @@ find_list_same_files () {
 	rm "$mytemp"/"$outputfile_inremote"
 	
 	cd "$param1"/
+	cmd="$?"
+	
+	if [ "$cmd" -ne 0 ] ; then
+		return 1
+	fi
 	
 	touch "$mytemp"/"$listfiles"
 	
-	#ERROR: co the co loi khi file vua bi xoa truoc khi lay filezise....
-	#giai quyet: lay filesize cuoi cung, neu =0 --> bi xoa roi
 	for pathname in ./* ;do
 		if [ -f "$pathname" ] ; then 
 			md5hash=$(head -c 1024 "$pathname" | md5sum | awk '{ print $1 }')
@@ -243,6 +246,11 @@ find_list_same_dirs () {
 	rm "$memtemp_local"/"$outputdir_inremote"
 
 	cd "$param1"/
+	cmd="$?"
+	
+	if [ "$cmd" -ne 0 ] ; then
+		return 1
+	fi
 	
 	touch "$memtemp_local"/"$listfiles"
 	
@@ -951,7 +959,7 @@ main(){
 	
 }
 
-main "/home/dungnt/ShellScript/tối quá" "/home/backup/so sánh thư mục"
+#main "/home/dungnt/ShellScript/tối quá" "/home/backup/so sánh thư mục"
 
 
 #mtime=$(stat "/home/dungnt/ShellScript/tối quá"/"file $\`\" 500mb.txt" --printf='%y\n')
