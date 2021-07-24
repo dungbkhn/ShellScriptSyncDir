@@ -876,34 +876,76 @@ sync_dir(){
 
 #-------------------------------------CHECK FILE STOPPED SUDDENTLY-----------------------------------------
 
-check_file_stopped_suddently(){
-	#dang lam chua xong
+find_stopped_file(){
 	local dir_ori="$1"
-	local dir_dest="$2"
+	local file="$2"
 	local pathname
-	local stoppedfile
-	local bl=0
+	local kq=1
+	local bs
 	
-	#read file first
-	stoppedfile="abcd.txt"
+	cd "$dir_ori"/
 	
-	cd "$dir_ori"
+	if [ "$?" -eq 1 ] ; then
+		return 1
+	fi
 	
-	for pathname in ./* ; do
-		if [ -d "$pathname" ] ; then 
-			#check_file_stopped_suddently "$dir_ori"/"$pathname" "$dir_dest"
-			echo 'de qui'
-		else
-			if [ "$stoppedfile" == "$pathname" ] ; then
-				bl=1
+	for pathname in "$dir_ori"/* ; do
+		if [ -f "$pathname" ] ; then 
+			bs=$(basename "$pathname")
+			if [ "$bs" == "$file" ] ; then
+				echo "$dir_ori"
+				kq=0
 				break
 			fi
 		fi
 	done
 	
-	if [ "$bl" -eq 1 ] ; then
-		#xu ly loi dung dot ngot
-		echo 'xuly'
+	
+	return "$kq"
+}
+
+check_file_stopped_suddently(){
+	local appendorcop
+	local foundfile
+	local foundfilesize=0
+	local dir_local
+	local dir_remote
+	local rs
+	local mtime
+	
+	local filelistsize=$(wc -c "$memtemp_local"/"$stoppedfilelist" | awk '{print $1}')
+
+	#read file first
+	if [ ! -f "$memtemp_local"/"$stoppedfilelist" ] || [ "$filelistsize" -eq 0 ] ; then
+		return 1
+	fi
+	
+	appendorcop=$(head -n 1 "$memtemp_local"/"$stoppedfilelist")
+	dir_local=$(head -n 2 "$memtemp_local"/"$stoppedfilelist" | tail -n 1)
+	dir_remote=$(head -n 3 "$memtemp_local"/"$stoppedfilelist" | tail -n 1)
+	foundfile=$(head -n 4 "$memtemp_local"/"$stoppedfilelist" | tail -n 1)
+	
+	if [ "$appendorcop" -eq 1 ] ; then
+		foundfilesize=$(head -n 5 "$memtemp_local"/"$stoppedfilelist" | tail -n 1)
+	fi
+	
+	echo "$appendorcop"
+	echo "$dir_local"
+	echo "$dir_remote"
+	echo "$foundfile"
+	echo "$foundfilesize"
+	
+	echo 'begin search:'
+	rs=$(find_stopped_file "$dir_local" "$foundfile")
+	if [ "$?" -eq 0 ] ; then
+		echo 'timthay: '"$rs"
+	fi
+	
+	mtime=$(stat "$dir_local"/"$foundfile" --printf='%y\n')
+	
+	if [ "$mtime" ] ; then
+		mtime=$(date +'%s' -d "$mtime")
+		append_native_file "$dir_local" "$dir_remote" "$foundfile" "$foundfilesize" "$mtime"
 	fi
 }
 
@@ -962,8 +1004,9 @@ main(){
 	
 }
 
-main "/home/dungnt/ShellScript/tối quá" "/home/backup/so sánh thư mục"
+#main "/home/dungnt/ShellScript/tối quá" "/home/backup/so sánh thư mục"
 
+check_file_stopped_suddently
 
 #mtime=$(stat "/home/dungnt/ShellScript/tối quá"/"file $\`\" 500mb.txt" --printf='%y\n')
 #mtime=$(date +'%s' -d "$mtime")
