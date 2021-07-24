@@ -25,9 +25,10 @@ logtimefile=logtimefile.txt
 outputfileforcmp_inremote=outputfile_inremote.txt
 outputdirforcmp_inremote=outputdir_inremote.txt
 uploadmd5hashfile=md5hashfile_fromlocal.txt
+stoppedfilelist=stoppedfilelist.txt
 
-
-sleeptime=5
+#for Sleep
+sleeptime=5m
 #for PRINTING
 prt=1
 #for OS Ubuntu 64
@@ -161,8 +162,9 @@ find_list_same_files () {
 	local outputfile_inremote="$outputfileforcmp_inremote"
 	local loopforcount
 	
-	rm "$mytemp"/*
-
+	rm "$mytemp"/"$listfiles"
+	rm "$mytemp"/"$outputfile_inremote"
+	
 	cd "$param1"/
 	
 	touch "$mytemp"/"$listfiles"
@@ -237,7 +239,8 @@ find_list_same_dirs () {
 	local outputdir_inremote="$outputdirforcmp_inremote"
 	local loopforcount
 	
-	rm "$memtemp_local"/*
+	rm "$memtemp_local"/"$listfiles"
+	rm "$memtemp_local"/"$outputdir_inremote"
 
 	cd "$param1"/
 	
@@ -303,154 +306,7 @@ find_list_same_dirs () {
 	fi
 }
 
-#-------------------------------------SYNC-----------------------------------------
-sync_dir(){
-	local param1=$1
-	local param2=$2
-	local mytemp="$memtemp_local"
-	local outputdir_inremote="$outputdirforcmp_inremote"
-	local outputfile_inremote="$outputfileforcmp_inremote"
-	local cmd
-	local findresult
-	local count
-	local total
-	local beforeslash
-	local afterslash_1
-	local afterslash_2
-	local afterslash_3
-	local afterslash_4
-	local afterslash_5
-	local afterslash_6
-	local afterslash_7
-	
-	# declare array
-	declare -a dirname
-	
-	# declare array
-	declare -a name
-	declare -a size
-	declare -a md5hash
-	declare -a mtime
-	declare -a mtime_local
-	declare -a apporcop
-	
-	# declare array
-	local countother
-	declare -a nameother
-	declare -a statusother
-	
-	printf "%s vs %s\n" "$param1" "$param2" 
-	
-	#dong bo thu muc truoc
-	find_list_same_dirs "$param1" "$param2"
-	
-	if [ -f "$mytemp"/"$outputdir_inremote" ] ; then
-		count=0
-		while IFS=/ read beforeslash afterslash_1 afterslash_2 afterslash_3
-		do
-			#echo "$afterslash_1"
-			#echo "$afterslash_2"
-			if [ "$afterslash_1" != "" ] ; then
-				if [ "$afterslash_2" -ne 5 ] ; then
-					dirname[$count]="$afterslash_1"
-					count=$(($count + 1))				
-				fi
-			fi
-		done < "$mytemp"/"$outputdir_inremote"
-		
-		for i in "${!dirname[@]}"
-		do
-			#echo "$param1"/"${dirname[$i]}"
-			#echo "$param2"/"${dirname[$i]}"
-			sync_dir "$param1"/"${dirname[$i]}" "$param2"/"${dirname[$i]}"
-		done
-	fi
-	
-	unset beforeslash
-	unset afterslash_1
-	unset afterslash_2
-	
-	#dong bo files
-	find_list_same_files "$param1" "$param2"
-	
-	if [ -f "$mytemp"/"$outputfile_inremote" ] ; then
-		count=0
-		countother=0
-		total=0
-		while IFS=/ read beforeslash afterslash_1 afterslash_2 afterslash_3 afterslash_4 afterslash_5 afterslash_6 afterslash_7
-		do
-			if [ "$afterslash_1" != "" ] ; then
-				if [ "$afterslash_2" -eq 0 ] ; then
-					name[$count]="$afterslash_1"
-					size[$count]="$afterslash_4"
-					md5hash[$count]="$afterslash_5"
-					mtime[$count]="$afterslash_6"
-					mtime_local[$count]="$afterslash_7"
-					echo "needappend:""${name[$count]}""-----""${size[$count]}""-----""${md5hash[$count]}""-----""${mtime[$count]}"
-					apporcop[$count]=1
-					count=$(($count + 1))
-				elif [ "$afterslash_2" -eq 4 ] || [ "$afterslash_2" -eq 5 ] ; then
-					name[$count]="$afterslash_1"
-					size[$count]="$afterslash_4"
-					md5hash[$count]="$afterslash_5"
-					mtime[$count]="$afterslash_6"
-					mtime_local[$count]="$afterslash_7"
-					echo "needcopy:""${name[$count]}""-----""${size[$count]}""-----""${md5hash[$count]}""-----""${mtime[$count]}"
-					apporcop[$count]=45
-					count=$(($count + 1))
-				else
-					nameother[$countother]="$afterslash_1"
-					statusother[$countother]="$afterslash_2"
-					countother=$(($countother + 1))
-				fi
-				
-				if [ "$afterslash_2" -ne 3 ] ; then
-					total=$(($total + 1))
-				fi
-			else
-				echo "--------------------""$total"" files received valid---------------------"
-			fi
-		done < "$mytemp"/"$outputfile_inremote"
-		
-		count=0
-		for i in "${!nameother[@]}"
-		do
-			printf '%s status: %s\n' "${nameother[$i]}" "${statusother[$i]}" 
-			count=$(($count + 1))
-		done
-		echo 'file ko duoc tinh------------'"$count"
-		
-		count=0
-		for i in "${!name[@]}"
-		do
-			findresult=$(find "$param1" -maxdepth 1 -type f -name "${name[$i]}")
-			
-			cmd=$?
-			#neu tim thay
-			if [ "$cmd" -eq 0 ] && [ "$findresult" ] ; then
-				#echo "nhung file giong ten nhung khac attribute:""$findresult"
-				if [ "${apporcop[$i]}" -eq 1 ] ; then
-					#file local da bi modify (ko ro vi tri bi modify) ---> append with hash
-					echo "->append:""mtimelc:""${mtime_local[$i]}"" mtime:""${mtime[$i]}""-""$param1"" ""$param2"" ""${name[$i]}"" ""${size[$i]}"
-					append_file_with_hash_checking "$param1" "$param2" "${name[$i]}" "${size[$i]}"
-				else
-					echo "->copy:""$param1"" ""$param2"" ""${name[$i]}"
-					copy_file "$param1" "$param2" "${name[$i]}"
-				fi
-			#neu ko tim thay
-			else
-				printf '**********************************file not found\n'
-			fi
-			count=$(($count + 1))
-		done
-		
-		echo "--------------------""$count"" files can append hoac copy ---------------------"
-		
-	#	return 0
-	#else
-	#	return 1
-	fi
-}
+
 	
 #------------------------------ APPEND FILE --------------------------------
 
@@ -796,26 +652,36 @@ append_file_with_hash_checking(){
 				mtime=$(stat "$param1"/"$filename" --printf='%y\n')
 				if [ "$mtime" ] ; then
 					mtime=$(date +'%s' -d "$mtime")
+					printf "1/%s/%s/%s/%s" "$param1" "$param2" "$filename" "$filesize_remote" >> "$memtemp_local"/"$stoppedfilelist"
 					append_native_file "$param1" "$param2" "$filename" "$filesize_remote" "$mtime"
-					return "$?"
+					cmd="$?"
+					if [ "$cmd" -eq 0 ] ; then
+						truncate -s 0 "$memtemp_local"/"$stoppedfilelist"
+					fi
+					return "$cmd"
 				else
 					echo 'mtime changed-->can not continue append'
-					return 1
+					return 252
 				fi
 			else
 				echo 'no same md5hash after truncate-->copy total file'
+				printf "0/%s/%s/%s" "$param1" "$param2" "$filename" >> "$memtemp_local"/"$stoppedfilelist"
 				copy_file "$param1" "$param2" "$filename"
-				return "$?"
+				cmd="$?"
+				if [ "$cmd" -eq 0 ] || [ "$cmd" -eq 255 ] ; then
+					truncate -s 0 "$memtemp_local"/"$stoppedfilelist"
+				fi
+				return "$cmd"
 			fi
 			
 		else
 			echo 'dd command error, nghi dai'
-			return 1
+			return 253
 		fi
 		
 	else
 		echo 'big error,ko thay file, nghi dai'
-		return 1
+		return 254
 	fi
 		
 }
@@ -834,12 +700,207 @@ copy_file() {
 		return "$?"
 	else
 		echo 'mtime changed-->can not continue copy'
-		return 1
+		return 255
 	fi
 }
 
+#-------------------------------------SYNC-----------------------------------------
+sync_dir(){
+	local param1=$1
+	local param2=$2
+	local mytemp="$memtemp_local"
+	local outputdir_inremote="$outputdirforcmp_inremote"
+	local outputfile_inremote="$outputfileforcmp_inremote"
+	local cmd
+	local findresult
+	local count
+	local total
+	local beforeslash
+	local afterslash_1
+	local afterslash_2
+	local afterslash_3
+	local afterslash_4
+	local afterslash_5
+	local afterslash_6
+	local afterslash_7
+	
+	# declare array
+	declare -a dirname
+	
+	# declare array
+	declare -a name
+	declare -a size
+	declare -a md5hash
+	declare -a mtime
+	declare -a mtime_local
+	declare -a apporcop
+	
+	# declare array
+	local countother
+	declare -a nameother
+	declare -a statusother
+	
+	printf "%s vs %s\n" "$param1" "$param2" 
+	
+	#dong bo thu muc truoc
+	find_list_same_dirs "$param1" "$param2"
+	
+	if [ -f "$mytemp"/"$outputdir_inremote" ] ; then
+		count=0
+		while IFS=/ read beforeslash afterslash_1 afterslash_2 afterslash_3
+		do
+			#echo "$afterslash_1"
+			#echo "$afterslash_2"
+			if [ "$afterslash_1" != "" ] ; then
+				if [ "$afterslash_2" -ne 5 ] ; then
+					dirname[$count]="$afterslash_1"
+					count=$(($count + 1))				
+				fi
+			fi
+		done < "$mytemp"/"$outputdir_inremote"
+		
+		for i in "${!dirname[@]}"
+		do
+			#echo "$param1"/"${dirname[$i]}"
+			#echo "$param2"/"${dirname[$i]}"
+			sync_dir "$param1"/"${dirname[$i]}" "$param2"/"${dirname[$i]}"
+		done
+	fi
+	
+	unset beforeslash
+	unset afterslash_1
+	unset afterslash_2
+	
+	#dong bo files
+	find_list_same_files "$param1" "$param2"
+	
+	if [ -f "$mytemp"/"$outputfile_inremote" ] ; then
+		count=0
+		countother=0
+		total=0
+		while IFS=/ read beforeslash afterslash_1 afterslash_2 afterslash_3 afterslash_4 afterslash_5 afterslash_6 afterslash_7
+		do
+			if [ "$afterslash_1" != "" ] ; then
+				if [ "$afterslash_2" -eq 0 ] ; then
+					name[$count]="$afterslash_1"
+					size[$count]="$afterslash_4"
+					md5hash[$count]="$afterslash_5"
+					mtime[$count]="$afterslash_6"
+					mtime_local[$count]="$afterslash_7"
+					echo "needappend:""${name[$count]}""-----""${size[$count]}""-----""${md5hash[$count]}""-----""${mtime[$count]}"
+					apporcop[$count]=1
+					count=$(($count + 1))
+				elif [ "$afterslash_2" -eq 4 ] || [ "$afterslash_2" -eq 5 ] ; then
+					name[$count]="$afterslash_1"
+					size[$count]="$afterslash_4"
+					md5hash[$count]="$afterslash_5"
+					mtime[$count]="$afterslash_6"
+					mtime_local[$count]="$afterslash_7"
+					echo "needcopy:""${name[$count]}""-----""${size[$count]}""-----""${md5hash[$count]}""-----""${mtime[$count]}"
+					apporcop[$count]=45
+					count=$(($count + 1))
+				else
+					nameother[$countother]="$afterslash_1"
+					statusother[$countother]="$afterslash_2"
+					countother=$(($countother + 1))
+				fi
+				
+				if [ "$afterslash_2" -ne 3 ] ; then
+					total=$(($total + 1))
+				fi
+			else
+				echo "--------------------""$total"" files received valid---------------------"
+			fi
+		done < "$mytemp"/"$outputfile_inremote"
+		
+		count=0
+		for i in "${!nameother[@]}"
+		do
+			printf '%s status: %s\n' "${nameother[$i]}" "${statusother[$i]}" 
+			count=$(($count + 1))
+		done
+		echo 'file ko duoc tinh------------'"$count"
+		
+		count=0
+		for i in "${!name[@]}"
+		do
+			findresult=$(find "$param1" -maxdepth 1 -type f -name "${name[$i]}")
+			
+			cmd=$?
+			#neu tim thay
+			if [ "$cmd" -eq 0 ] && [ "$findresult" ] ; then
+				#echo "nhung file giong ten nhung khac attribute:""$findresult"
+				if [ "${apporcop[$i]}" -eq 1 ] ; then
+					#file local da bi modify (ko ro vi tri bi modify) ---> append with hash
+					echo "->append:""mtimelc:""${mtime_local[$i]}"" mtime:""${mtime[$i]}""-""$param1"" ""$param2"" ""${name[$i]}"" ""${size[$i]}"
+					append_file_with_hash_checking "$param1" "$param2" "${name[$i]}" "${size[$i]}"
+					cmd="$?"
+					if [ "$cmd" -eq 1 ] ; then
+						#stop sync
+						break
+					fi
+				else
+					echo "->copy:""$param1"" ""$param2"" ""${name[$i]}"
+					printf "0/%s/%s/%s" "$param1" "$param2" "${name[$i]}" >> "$mytemp"/"$stoppedfilelist"
+					copy_file "$param1" "$param2" "${name[$i]}"
+					cmd="$?"
+					if [ "$cmd" -eq 0 ] || [ "$cmd" -eq 255 ] ; then
+						truncate -s 0 "$mytemp"/"$stoppedfilelist"
+					else 
+						#stop sync
+						break
+					fi
+				fi
+			#neu ko tim thay
+			else
+				printf '**********************************file not found\n'
+			fi
+			count=$(($count + 1))
+		done
+		
+		echo "--------------------""$count"" files can append hoac copy ---------------------"
+
+	fi
+}
+
+#-------------------------------------CHECK FILE STOPPED SUDDENTLY-----------------------------------------
+
+check_file_stopped_suddently(){
+	#dang lam chua xong
+	local dir_ori="$1"
+	local dir_dest="$2"
+	local pathname
+	local stoppedfile
+	local bl=0
+	
+	#read file first
+	stoppedfile="abcd.txt"
+	
+	cd "$dir_ori"
+	
+	for pathname in ./* ; do
+		if [ -d "$pathname" ] ; then 
+			#check_file_stopped_suddently "$dir_ori"/"$pathname" "$dir_dest"
+			echo 'de qui'
+		else
+			if [ "$stoppedfile" == "$pathname" ] ; then
+				bl=1
+				break
+			fi
+		fi
+	done
+	
+	if [ "$bl" -eq 1 ] ; then
+		#xu ly loi dung dot ngot
+		echo 'xuly'
+	fi
+}
+
+#-------------------------------------MAIN-----------------------------------------
 
 main(){
+	local dir_ori="$1"
+	local dir_dest="$2"
 	local cmd
 	local result
 	
@@ -847,8 +908,11 @@ main(){
 		mkdir "$memtemp_local"
 	fi
 	
-	rm "$memtemp_local"/*
-
+	if [ ! -f "$memtemp_local"/"$stoppedfilelist" ] ; then
+		echo 'tao stoppedfile'
+		touch "$memtemp_local"/"$stoppedfilelist"
+	fi
+	
 	while true; do
 	
 		check_network
@@ -865,31 +929,35 @@ main(){
 			verify_logged
 			cmd=$?
 			myprintf "verify active user" "$cmd"
-			
-			break
-			
+
+			#check if a file is stopped suddently
+			#check_file_stopped_suddently "$dir_ori" "$dir_dest"
+	
 			#if verifyresult: no active user -> sync_dir
-			if [ "$cmd" -gt 10 ] ; then
+			if [ "$cmd" -eq 0 ] ; then
 				myecho "begin sync dir"
-				#sync_dir "$dir_ori" "$dir_dest"
+				sync_dir "$dir_ori" "$dir_dest"
 				echo "go to sleep 1"
-				#sleep "$sleeptime"m
+				sleep "$sleeptime"
 			else
 				echo "go to sleep 2"
-				#sleep "$sleeptime"m
+				sleep "$sleeptime"
 			fi
 		else
 			echo "go to sleep 00"
-			#sleep "$sleeptime"m
+			sleep "$sleeptime"
 		fi
 	done
 	
 }
 
-mtime=$(stat "/home/dungnt/ShellScript/tối quá"/"file500mb.txt" --printf='%y\n')
-mtime=$(date +'%s' -d "$mtime")
+main "/home/dungnt/ShellScript/tối quá" "/home/backup/so sánh thư mục"
 
-#main
+
+#mtime=$(stat "/home/dungnt/ShellScript/tối quá"/"file $\`\" 500mb.txt" --printf='%y\n')
+#mtime=$(date +'%s' -d "$mtime")
+
+
 #find_list_same_files "/home/dungnt/ShellScript/tối quá" "/home/backup/biết sosanh"
 #find_list_same_dirs "/home/dungnt/ShellScript/tối quá" "/home/backup/so sánh thư mục"
 #sync_dir "/home/dungnt/ShellScript/tối quá" "/home/backup/so sánh thư mục"
@@ -898,4 +966,4 @@ mtime=$(date +'%s' -d "$mtime")
 #copy_file "/home/dungnt/ShellScript/tối quá" "/home/backup/so sánh thư mục" "noi"
 #append_native_file "/home/dungnt/ShellScript/tối quá" "/home/backup/so sánh thư mục" "noi" 1 "$mainhash"
 #copy_file "/home/dungnt/ShellScript/tối quá" "/home/backup/so sánh thư mục" "file500mb.txt"
-append_native_file "/home/dungnt/ShellScript/tối quá" "/home/backup/so sánh thư mục" "file500mb.txt" 450000000 "$mtime"
+#append_native_file "/home/dungnt/ShellScript/tối quá" "/home/backup/so sánh thư mục" "file $\`\" 500mb.txt" 450000000 "$mtime"
