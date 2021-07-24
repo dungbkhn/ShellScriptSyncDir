@@ -935,10 +935,14 @@ check_file_stopped_suddently(){
 	echo "$foundfile"
 	echo "$foundfilesize"
 	
+	truncate -s 0 "$memtemp_local"/"$stoppedfilelist"
+	
 	echo 'begin search:'
 	rs=$(find_stopped_file "$dir_local" "$foundfile")
 	if [ "$?" -eq 0 ] ; then
 		echo 'timthay: '"$rs"
+	else
+		return 255
 	fi
 	
 	mtime=$(stat "$dir_local"/"$foundfile" --printf='%y\n')
@@ -946,6 +950,8 @@ check_file_stopped_suddently(){
 	if [ "$mtime" ] ; then
 		mtime=$(date +'%s' -d "$mtime")
 		append_native_file "$dir_local" "$dir_remote" "$foundfile" "$foundfilesize" "$mtime"
+	else
+		return 255
 	fi
 }
 
@@ -984,7 +990,7 @@ main(){
 			myprintf "verify active user" "$cmd"
 
 			#check if a file is stopped suddently
-			#check_file_stopped_suddently "$dir_ori" "$dir_dest"
+			#check_file_stopped_suddently
 	
 			#if verifyresult: no active user -> sync_dir
 			if [ "$cmd" -eq 0 ] ; then
