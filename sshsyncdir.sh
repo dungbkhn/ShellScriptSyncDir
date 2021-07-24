@@ -660,7 +660,8 @@ append_file_with_hash_checking(){
 				mtime=$(stat "$param1"/"$filename" --printf='%y\n')
 				if [ "$mtime" ] ; then
 					mtime=$(date +'%s' -d "$mtime")
-					printf "1/%s/%s/%s/%s" "$param1" "$param2" "$filename" "$filesize_remote" >> "$memtemp_local"/"$stoppedfilelist"
+					truncate -s 0 "$memtemp_local"/"$stoppedfilelist"
+					printf "1\n%s\n%s\n%s\n%s" "$param1" "$param2" "$filename" "$filesize_remote" >> "$memtemp_local"/"$stoppedfilelist"
 					append_native_file "$param1" "$param2" "$filename" "$filesize_remote" "$mtime"
 					cmd="$?"
 					if [ "$cmd" -ne 1 ] ; then
@@ -673,7 +674,8 @@ append_file_with_hash_checking(){
 				fi
 			else
 				echo 'no same md5hash after truncate-->copy total file'
-				printf "0/%s/%s/%s" "$param1" "$param2" "$filename" >> "$memtemp_local"/"$stoppedfilelist"
+				truncate -s 0 "$memtemp_local"/"$stoppedfilelist"
+				printf "0\n%s\n%s\n%s\n####" "$param1" "$param2" "$filename" >> "$memtemp_local"/"$stoppedfilelist"
 				copy_file "$param1" "$param2" "$filename"
 				cmd="$?"
 				if [ "$cmd" -ne 1 ] ; then
@@ -849,7 +851,8 @@ sync_dir(){
 					fi
 				else
 					echo "->copy:""$param1"" ""$param2"" ""${name[$i]}"
-					printf "0/%s/%s/%s" "$param1" "$param2" "${name[$i]}" >> "$mytemp"/"$stoppedfilelist"
+					truncate -s 0 "$mytemp"/"$stoppedfilelist"
+					printf "0\n%s\n%s\n%s\n####" "$param1" "$param2" "${name[$i]}" >> "$mytemp"/"$stoppedfilelist"
 					copy_file "$param1" "$param2" "${name[$i]}"
 					cmd="$?"
 					if [ "$cmd" -ne 1 ] ; then
@@ -959,7 +962,7 @@ main(){
 	
 }
 
-#main "/home/dungnt/ShellScript/tối quá" "/home/backup/so sánh thư mục"
+main "/home/dungnt/ShellScript/tối quá" "/home/backup/so sánh thư mục"
 
 
 #mtime=$(stat "/home/dungnt/ShellScript/tối quá"/"file $\`\" 500mb.txt" --printf='%y\n')
