@@ -364,9 +364,9 @@ append_native_file(){
 	count=0
 	end=0
 	filesize=$(wc -c "$dir1"/"$filename" | awk '{print $1}')
-	#khi filesize=rong do bi xoa dot ngot --> return 1
+	#khi filesize=rong do bi xoa dot ngot --> return <> 0
 	if [ ! "$filesize" ] ; then
-		return 1
+		return 250
 	fi
 	
 	uploadsize=$(( $filesize - ($filesizeinremote / (8*1024*1024))*(8*1024*1024) ))
@@ -582,7 +582,7 @@ append_native_file(){
 			if [ "$truncateparam4" -eq 1 ] ; then
 				return 0
 			else
-				return 1
+				return 2
 			fi
 		
 		fi
@@ -655,7 +655,7 @@ append_file_with_hash_checking(){
 					printf "1/%s/%s/%s/%s" "$param1" "$param2" "$filename" "$filesize_remote" >> "$memtemp_local"/"$stoppedfilelist"
 					append_native_file "$param1" "$param2" "$filename" "$filesize_remote" "$mtime"
 					cmd="$?"
-					if [ "$cmd" -eq 0 ] ; then
+					if [ "$cmd" -ne 1 ] ; then
 						truncate -s 0 "$memtemp_local"/"$stoppedfilelist"
 					fi
 					return "$cmd"
@@ -668,19 +668,19 @@ append_file_with_hash_checking(){
 				printf "0/%s/%s/%s" "$param1" "$param2" "$filename" >> "$memtemp_local"/"$stoppedfilelist"
 				copy_file "$param1" "$param2" "$filename"
 				cmd="$?"
-				if [ "$cmd" -eq 0 ] || [ "$cmd" -eq 255 ] ; then
+				if [ "$cmd" -ne 1 ] ; then
 					truncate -s 0 "$memtemp_local"/"$stoppedfilelist"
 				fi
 				return "$cmd"
 			fi
 			
 		else
-			echo 'dd command error, nghi dai'
+			echo 'dd command error, cothe ko thay file'
 			return 253
 		fi
 		
 	else
-		echo 'big error,ko thay file, nghi dai'
+		echo 'big error,ko thay file'
 		return 254
 	fi
 		
@@ -844,7 +844,7 @@ sync_dir(){
 					printf "0/%s/%s/%s" "$param1" "$param2" "${name[$i]}" >> "$mytemp"/"$stoppedfilelist"
 					copy_file "$param1" "$param2" "${name[$i]}"
 					cmd="$?"
-					if [ "$cmd" -eq 0 ] || [ "$cmd" -eq 255 ] ; then
+					if [ "$cmd" -ne 1 ] ; then
 						truncate -s 0 "$mytemp"/"$stoppedfilelist"
 					else 
 						#stop sync
@@ -959,7 +959,7 @@ main "/home/dungnt/ShellScript/tối quá" "/home/backup/so sánh thư mục"
 
 
 #find_list_same_files "/home/dungnt/ShellScript/tối quá" "/home/backup/biết sosanh"
-#find_list_same_dirs "/home/dungnt/ShellScript/tối quá" "/home/backup/so sánh thư mục"
+#find_list_same_dirs "/home/dungnt/ShellScript/tối quá2" "/home/backup/so sánh thư mục"
 #sync_dir "/home/dungnt/ShellScript/tối quá" "/home/backup/so sánh thư mục"
 #copy_file "/home/dungnt/ShellScript/tối quá" "/home/backup/so sánh thư mục" "file tét.txt"
 #append_native_file "/home/dungnt/ShellScript/tối quá" "/home/backup/so sánh thư mục" "file tét.txt" 20000000 "$mainhash"
