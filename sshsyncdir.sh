@@ -661,7 +661,7 @@ append_file_with_hash_checking(){
 				if [ "$mtime" ] ; then
 					mtime=$(date +'%s' -d "$mtime")
 					truncate -s 0 "$memtemp_local"/"$stoppedfilelist"
-					printf "1\n%s\n%s\n%s\n%s" "$param1" "$param2" "$filename" "$filesize_remote" >> "$memtemp_local"/"$stoppedfilelist"
+					printf "1\n%s\n%s\n%s\n%s\n%s" "$param1" "$param2" "$filename" "$filesize_remote" "$mtime" >> "$memtemp_local"/"$stoppedfilelist"
 					append_native_file "$param1" "$param2" "$filename" "$filesize_remote" "$mtime"
 					cmd="$?"
 					if [ "$cmd" -ne 1 ] ; then
@@ -674,13 +674,8 @@ append_file_with_hash_checking(){
 				fi
 			else
 				echo 'no same md5hash after truncate-->copy total file'
-				truncate -s 0 "$memtemp_local"/"$stoppedfilelist"
-				printf "0\n%s\n%s\n%s\n####" "$param1" "$param2" "$filename" >> "$memtemp_local"/"$stoppedfilelist"
 				copy_file "$param1" "$param2" "$filename"
 				cmd="$?"
-				if [ "$cmd" -ne 1 ] ; then
-					truncate -s 0 "$memtemp_local"/"$stoppedfilelist"
-				fi
 				return "$cmd"
 			fi
 			
@@ -706,7 +701,12 @@ copy_file() {
 	
 	if [ "$mtime" ] ; then
 		mtime=$(date +'%s' -d "$mtime")
+		truncate -s 0 "$memtemp_local"/"$stoppedfilelist"
+		printf "0\n%s\n%s\n%s\n0\n%s" "$dir1" "$dir2" "$filename" "$mtime" >> "$memtemp_local"/"$stoppedfilelist"
 		append_native_file "$dir1" "$dir2" "$filename" 0 "$mtime"
+		if [ "$cmd" -ne 1 ] ; then
+			truncate -s 0 "$memtemp_local"/"$stoppedfilelist"
+		fi
 		return "$?"
 	else
 		echo 'mtime changed-->can not continue copy'
@@ -845,22 +845,15 @@ sync_dir(){
 					echo "->append:""mtimelc:""${mtime_local[$i]}"" mtime:""${mtime[$i]}""-""$param1"" ""$param2"" ""${name[$i]}"" ""${size[$i]}"
 					append_file_with_hash_checking "$param1" "$param2" "${name[$i]}" "${size[$i]}"
 					cmd="$?"
-					if [ "$cmd" -eq 1 ] ; then
-						#stop sync
-						break
-					fi
 				else
 					echo "->copy:""$param1"" ""$param2"" ""${name[$i]}"
-					truncate -s 0 "$mytemp"/"$stoppedfilelist"
-					printf "0\n%s\n%s\n%s\n####" "$param1" "$param2" "${name[$i]}" >> "$mytemp"/"$stoppedfilelist"
 					copy_file "$param1" "$param2" "${name[$i]}"
 					cmd="$?"
-					if [ "$cmd" -ne 1 ] ; then
-						truncate -s 0 "$mytemp"/"$stoppedfilelist"
-					else 
-						#stop sync
-						break
-					fi
+				fi
+				
+				if [ "$cmd" -eq 1 ] ; then
+					#stop sync
+					break
 				fi
 			#neu ko tim thay
 			else
@@ -910,6 +903,7 @@ check_file_stopped_suddently(){
 	local foundfilesize=0
 	local dir_local
 	local dir_remote
+	local old_mtime
 	local rs
 	local mtime
 	
@@ -929,13 +923,16 @@ check_file_stopped_suddently(){
 		foundfilesize=$(head -n 5 "$memtemp_local"/"$stoppedfilelist" | tail -n 1)
 	fi
 	
+	old_mtime=$(head -n 6 "$memtemp_local"/"$stoppedfilelist" | tail -n 1)
+	
 	echo "$appendorcop"
 	echo "$dir_local"
 	echo "$dir_remote"
 	echo "$foundfile"
 	echo "$foundfilesize"
+	echo "$old_mtime"
 	
-	truncate -s 0 "$memtemp_local"/"$stoppedfilelist"
+	#truncate -s 0 "$memtemp_local"/"$stoppedfilelist"
 	
 	echo 'begin search:'
 	rs=$(find_stopped_file "$dir_local" "$foundfile")
@@ -1010,9 +1007,9 @@ main(){
 	
 }
 
-#main "/home/dungnt/ShellScript/tối quá" "/home/backup/so sánh thư mục"
+main "/home/dungnt/ShellScript/tối quá" "/home/backup/so sánh thư mục"
 
-check_file_stopped_suddently
+#check_file_stopped_suddently
 
 #mtime=$(stat "/home/dungnt/ShellScript/tối quá"/"file $\`\" 500mb.txt" --printf='%y\n')
 #mtime=$(date +'%s' -d "$mtime")
