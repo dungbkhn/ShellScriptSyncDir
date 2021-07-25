@@ -803,7 +803,7 @@ sync_dir(){
 					md5hash[$count]="$afterslash_5"
 					mtime[$count]="$afterslash_6"
 					mtime_local[$count]="$afterslash_7"
-					echo "needappend:""${name[$count]}""-----""${size[$count]}""-----""${md5hash[$count]}""-----""${mtime[$count]}"
+					mech "needappend:""${name[$count]}""-----""${size[$count]}""-----""${md5hash[$count]}""-----""${mtime[$count]}"
 					apporcop[$count]=1
 					count=$(($count + 1))
 				elif [ "$afterslash_2" -eq 4 ] || [ "$afterslash_2" -eq 5 ] ; then
@@ -812,7 +812,7 @@ sync_dir(){
 					md5hash[$count]="$afterslash_5"
 					mtime[$count]="$afterslash_6"
 					mtime_local[$count]="$afterslash_7"
-					echo "needcopy:""${name[$count]}""-----""${size[$count]}""-----""${md5hash[$count]}""-----""${mtime[$count]}"
+					mech "needcopy:""${name[$count]}""-----""${size[$count]}""-----""${md5hash[$count]}""-----""${mtime[$count]}"
 					apporcop[$count]=45
 					count=$(($count + 1))
 				else
@@ -1073,7 +1073,7 @@ main(){
 	done
 }
 
-#main "/home/dungnt/ShellScript/tối quá" "/home/backup/so sánh thư mục"
+main "/home/dungnt/ShellScript/tối quá" "/home/backup/so sánh thư mục"
 
 
 #find_stopped_file "/home/dungnt/ShellScript/tối quá" "file $\`\" 500mb.txt"
@@ -1091,7 +1091,7 @@ main(){
 #append_native_file "/home/dungnt/ShellScript/tối quá" "/home/backup/so sánh thư mục" "file tét.txt" 20000000 "$mainhash"
 #copy_file "/home/dungnt/ShellScript/tối quá" "/home/backup/so sánh thư mục" "noi"
 #append_native_file "/home/dungnt/ShellScript/tối quá" "/home/backup/so sánh thư mục" "noi" 1 "$mainhash"
-copy_file "/home/dungnt/ShellScript/tối quá" "/home/backup/so sánh thư mục" "file $\`\" 500mb.txt"
+#copy_file "/home/dungnt/ShellScript/tối quá" "/home/backup/so sánh thư mục" "file $\`\" 500mb.txt"
 #append_native_file "/home/dungnt/ShellScript/tối quá" "/home/backup/so sánh thư mục" "file $\`\" 500mb.txt" 200000000 "$mtime"
 
 #filenameinhextest=$(echo "/home/backup/so sánh thư mục"/"file $\`\" 500mb.txt" | tr -d '\n' | xxd -pu -c 1000000)
