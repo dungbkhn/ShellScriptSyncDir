@@ -190,16 +190,16 @@ find_list_same_files () {
 	
 	result=$(scp -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" -p "$mytemp"/"$listfiles" "$destipv6addr_scp":"$memtemp_remote"/)
 	cmd1=$?
-	myprintf "scp 1 listfile" "$cmd1"
+	mech "scp 1 listfile ""$cmd1"
 			
 	result=$(scp -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" -p "$dir_contains_uploadfiles"/"$compare_listfile_inremote" "$destipv6addr_scp":"$memtemp_remote"/)
 	cmd2=$?
-	myprintf "scp 1 shellfile" "$cmd2"
+	mech "scp 1 shellfile ""$cmd2"
 
 	result=$(ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" "$destipv6addr" "rm ${memtemp_remote}/${outputfile_inremote}")
 	cmd3=$?
 	
-	myprintf "ssh remove old outputfile" "$cmd3"
+	mech "ssh remove old outputfile ""$cmd3"
 	pathname=$(echo "$param2" | tr -d '\n' | xxd -pu -c 1000000)
 	
 	if [ "$cmd1" -eq 0 ] && [ "$cmd2" -eq 0 ] && [ "$cmd3" -ne 255 ] ; then
@@ -207,7 +207,7 @@ find_list_same_files () {
 		do
 			result=$(ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" "$destipv6addr" "bash ${memtemp_remote}/${compare_listfile_inremote} ${listfiles} ${pathname} ${outputfile_inremote}")
 			cmd=$?
-			myprintf "ssh generate new outputfile" "$cmd"
+			mech "ssh generate new outputfile ""$cmd"
 			if [ "$cmd" -eq 0 ] ; then
 				break
 			else
@@ -218,7 +218,7 @@ find_list_same_files () {
 		if [ "$cmd" -eq 0 ] ; then
 			result=$(scp -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" -p "$destipv6addr_scp":"$memtemp_remote"/"$outputfile_inremote" "$mytemp"/)
 			cmd=$?
-			myprintf "scp getback outputfile" "$cmd"
+			mech "scp getback outputfile ""$cmd"
 		fi
 	fi
 }
@@ -281,16 +281,16 @@ find_list_same_dirs () {
 	
 	result=$(scp -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" -p "$memtemp_local"/"$listfiles" "$destipv6addr_scp":"$memtemp_remote"/)
 	cmd1=$?
-	myprintf "scp 1 listfile" "$cmd1"
+	mech "scp 1 listfile ""$cmd1"
 			
 	result=$(scp -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" -p "$dir_contains_uploadfiles"/"$compare_listdir_inremote" "$destipv6addr_scp":"$memtemp_remote"/)
 	cmd2=$?
-	myprintf "scp 1 shellfile" "$cmd2"
+	mech "scp 1 shellfile ""$cmd2"
 
 	result=$(ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" "$destipv6addr" "rm ${memtemp_remote}/${outputdir_inremote}")
 	cmd3=$?
 	
-	myprintf "ssh remove old outputfile" "$cmd3"
+	mech "ssh remove old outputfile ""$cmd3"
 	pathname=$(echo "$param2" | tr -d '\n' | xxd -pu -c 1000000)
 	
 	if [ "$cmd1" -eq 0 ] && [ "$cmd2" -eq 0 ] && [ "$cmd3" -ne 255 ] ; then
@@ -298,7 +298,7 @@ find_list_same_dirs () {
 		do
 			result=$(ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" "$destipv6addr" "bash ${memtemp_remote}/${compare_listdir_inremote} ${listfiles} ${pathname} ${outputdir_inremote}")
 			cmd=$?
-			myprintf "ssh generate new outputdir" "$cmd"
+			mech "ssh generate new outputdir ""$cmd"
 			if [ "$cmd" -eq 0 ] ; then
 				break
 			else
@@ -309,7 +309,7 @@ find_list_same_dirs () {
 		if [ "$cmd" -eq 0 ] ; then
 			result=$(scp -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" -p "$destipv6addr_scp":"$memtemp_remote"/"$outputdir_inremote" "$memtemp_local"/)
 			cmd=$?
-			myprintf "scp getback outputdir" "$cmd"
+			mech "scp getback outputdir ""$cmd"
 		fi
 	fi
 }
@@ -934,12 +934,12 @@ check_file_stopped_suddently(){
 	
 	old_mtime=$(head -n 6 "$memtemp_local"/"$stoppedfilelist" | tail -n 1)
 	
-	echo "$appendorcop"
-	echo "$dir_local"
-	echo "$dir_remote"
-	echo "$foundfile"
-	echo "$foundfilesize"
-	echo "$old_mtime"
+	mech "$appendorcop"
+	mech "$dir_local"
+	mech "$dir_remote"
+	mech "$foundfile"
+	mech "$foundfilesize"
+	mech "$old_mtime"
 
 	#xu ly file tren remote
 	if [ "$foundfilesize" -gt 0 ] ; then
@@ -948,17 +948,17 @@ check_file_stopped_suddently(){
 		do		
 			#vuot timeout
 			if [ "$loopforcount" -eq 20 ] ;  then
-				echo 'xu ly tren remote loi, nghi dai'
+				mech 'xu ly tren remote loi, nghi dai'
 				return 1
 			fi
 			
 			result=$(scp -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" -p "$dir_contains_uploadfiles"/"$truncatefile_inremote" "$destipv6addr_scp":"$memtemp_remote"/)
 			cmd1=$?
-			myprintf "scp 1 truncatefile" "$cmd1"
+			mech "scp 1 truncatefile ""$cmd1"
 			
 			result=$(ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" "$destipv6addr" "bash ${memtemp_remote}/${truncatefile_inremote} null ${filenameinhex} 2 ${foundfilesize}")
 			cmd2=$?
-			myprintf "xu ly lai: run truncatefile in remote" "$cmd2"
+			mech "xu ly lai: run truncatefile in remote ""$cmd2"
 			
 			if [ "$cmd1" -eq 0 ] && [ "$cmd2" -eq 0 ] ; then
 				#thoat vong lap for
@@ -969,7 +969,7 @@ check_file_stopped_suddently(){
 		done
 	fi
 	
-	echo 'begin search:'
+	mech 'begin search:'
 	find_stopped_file "$dir_local" "$foundfile"
 	cmd="$?"
 	if [ "$cmd" -eq 0 ] ; then
