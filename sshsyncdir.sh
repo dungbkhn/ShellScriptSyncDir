@@ -1,5 +1,5 @@
 #!/bin/bash
-
+#loi khi filesize=0 --> kothe sync
 shopt -s dotglob
 shopt -s nullglob
 
