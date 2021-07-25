@@ -28,7 +28,7 @@ uploadmd5hashfile=md5hashfile_fromlocal.txt
 stoppedfilelist=stoppedfilelist.txt
 
 #for Sleep
-sleeptime=5m
+sleeptime=15m
 #for PRINTING
 prt=1
 #for OS Ubuntu 64
@@ -374,6 +374,7 @@ append_native_file(){
 	filesize=$(wc -c "$dir1"/"$filename" | awk '{print $1}')
 	#khi filesize=rong do bi xoa dot ngot --> return <> 0
 	if [ ! "$filesize" ] ; then
+		echo 'Notes: original file has been not found'
 		return 250
 	fi
 	
@@ -590,6 +591,7 @@ append_native_file(){
 			if [ "$truncateparam4" -eq 1 ] ; then
 				return 0
 			else
+				echo 'Notes: original file has been changed'
 				return 2
 			fi
 		
@@ -995,10 +997,11 @@ check_file_stopped_suddently(){
 #-------------------------------------MAIN-----------------------------------------
 
 main(){
-	#dang lam 
 	local dir_ori="$1"
 	local dir_dest="$2"
 	local cmd
+	local cmd1
+	local cmd2
 	local result
 	local count
 	
@@ -1007,61 +1010,76 @@ main(){
 	fi
 	
 	if [ ! -f "$memtemp_local"/"$stoppedfilelist" ] ; then
-		echo 'tao stoppedfile'
+		echo 'create stoppedfile'
 		touch "$memtemp_local"/"$stoppedfilelist"
 	fi
 	
 	#add to know_hosts for firsttime
 	if [ -f "$fileprivatekey" ] ; then
-		result=$(ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" "$destipv6addr" "mkdir ${memtemp_remote}")
-		cmd=$?
-		myprintf "mkdir temp at remote" "$cmd"
+		cmd=255
+		while [ "$cmd" -eq 255 ] ; do
+			result=$(ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" "$destipv6addr" "mkdir ${memtemp_remote}")
+			cmd=$?
+			myprintf "mkdir temp at remote" "$cmd"
+		done
+	else
+		echo 'error: key not found, stop!'
+		return 1
 	fi
 	
-	while true; do
 	
-		check_network
-		cmd=$?
-		myprintf "check network" "$cmd"
-		
-		if [ "$cmd" -eq 0 ] && [ -f "$fileprivatekey" ] ; then
+	while true; do
+		count=0
+		while [ "$count" -lt 3 ] ; do
+			check_network
+			cmd1=$?
+			myprintf "check network" "$cmd1"
 			
-			
+			verify_logged
+			cmd2=$?
+			myprintf "verify active user" "$cmd2"
 
-			count=0
-			while [ "$count" -lt 5 ] ; do
-				verify_logged
+			#check if a file is stopped suddently
+			if [ "$cmd1" -eq 0 ] && [ "$cmd2" -eq 0 ] ; then
+				check_file_stopped_suddently
 				cmd=$?
-				myprintf "verify active user" "$cmd"
-
-				#check if a file is stopped suddently
 				if [ "$cmd" -eq 0 ] ; then
-					check_file_stopped_suddently
-					cmd=$?
-					if [] ; then
-						break
-					else
-						count=$(( $count + 1 ))
-				else
-					count=10000
 					break
+				elif [ "$cmd" -eq 255 ] ; then
+					touch "$memtemp_local"/"$stoppedfilelist"
+				else
+					count=$(( $count + 1 ))
 				fi
-			done
+			else
+				echo "go to sleep 1"
+				sleep "$sleeptime"
+			fi
+		done
 
-			myecho "begin sync dir"
-			#sync_dir "$dir_ori" "$dir_dest"
-			echo "go to sleep 1"
-			sleep "$sleeptime"
+		truncate -s 0 "$memtemp_local"/"$stoppedfilelist"
+		
+		check_network
+		cmd1=$?
+		myprintf "check network" "$cmd1"
+		
+		verify_logged
+		cmd2=$?
+		myprintf "verify active user" "$cmd2"
 			
+		if [ "$cmd1" -eq 0 ] && [ "$cmd2" -eq 0 ] ; then
+			myecho "begin sync dir"
+			sync_dir "$dir_ori" "$dir_dest"
+			echo "go to sleep 2"
+			sleep "$sleeptime"
 		else
-			echo "go to sleep 0"
+			echo "go to sleep 3"
 			sleep "$sleeptime"
 		fi
+
 	done
-	
 }
 
-#main "/home/dungnt/ShellScript/tối quá" "/home/backup/so sánh thư mục"
+main "/home/dungnt/ShellScript/tối quá" "/home/backup/so sánh thư mục"
 
 #check_file_stopped_suddently
 #echo "ket qua chay ham: ""$?"
@@ -1077,4 +1095,7 @@ main(){
 #copy_file "/home/dungnt/ShellScript/tối quá" "/home/backup/so sánh thư mục" "noi"
 #append_native_file "/home/dungnt/ShellScript/tối quá" "/home/backup/so sánh thư mục" "noi" 1 "$mainhash"
 #copy_file "/home/dungnt/ShellScript/tối quá" "/home/backup/so sánh thư mục" "file $\`\" 500mb.txt"
-#append_native_file "/home/dungnt/ShellScript/tối quá" "/home/backup/so sánh thư mục" "file $\`\" 500mb.txt" 400000000 "$mtime"
+#append_native_file "/home/dungnt/ShellScript/tối quá" "/home/backup/so sánh thư mục" "file $\`\" 500mb.txt" 200000000 "$mtime"
+
+#filenameinhextest=$(echo "/home/backup/so sánh thư mục"/"file $\`\" 500mb.txt" | tr -d '\n' | xxd -pu -c 1000000)
+#ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" "$destipv6addr" "bash ${memtemp_remote}/${truncatefile_inremote} ${memtemp_remote}/tempfile.being ${filenameinhextest} 3 2 200000000"
