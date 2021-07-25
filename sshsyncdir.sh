@@ -491,7 +491,7 @@ append_native_file(){
 					return 1
 				fi
 				
-				
+
 				echo 'begin truncate end file'
 				result=$(ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" "$destipv6addr" "bash ${memtemp_remote}/${truncatefile_inremote} ${memtemp_remote}/${tempfilename} ${filenameinhex} 3 0 ${uploadsize} ${filesizeinremote}")
 				cmd=$?
@@ -563,7 +563,7 @@ append_native_file(){
 			echo "last truncate and rsync elapsed time (using \$SECONDS): $SECONDS seconds"
 		fi
 		
-		
+					
 		if [ "$end" -ne 0 ] ; then
 
 			for (( loopforcount=0; loopforcount<21; loopforcount+=1 ));
@@ -696,7 +696,8 @@ copy_file() {
 	local dir2=$2
 	local filename=$3
 	local mtime
-
+	local cmd
+	
 	mtime=$(stat "$dir1"/"$filename" --printf='%y\n')
 	
 	if [ "$mtime" ] ; then
@@ -704,10 +705,11 @@ copy_file() {
 		truncate -s 0 "$memtemp_local"/"$stoppedfilelist"
 		printf "0\n%s\n%s\n%s\n0\n%s" "$dir1" "$dir2" "$filename" "$mtime" >> "$memtemp_local"/"$stoppedfilelist"
 		append_native_file "$dir1" "$dir2" "$filename" 0 "$mtime"
+		cmd="$?"
 		if [ "$cmd" -ne 1 ] ; then
 			truncate -s 0 "$memtemp_local"/"$stoppedfilelist"
 		fi
-		return "$?"
+		return "$cmd"
 	else
 		echo 'mtime changed-->can not continue copy'
 		return 255
@@ -875,6 +877,7 @@ find_stopped_file(){
 	local pathname
 	local kq=1
 	local bs
+	local workingdir=$(pwd)
 	
 	cd "$dir_ori"/
 	
@@ -893,6 +896,7 @@ find_stopped_file(){
 		fi
 	done
 	
+	cd "$workingdir"/
 	
 	return "$kq"
 }
@@ -906,12 +910,21 @@ check_file_stopped_suddently(){
 	local old_mtime
 	local rs
 	local mtime
-	
+	local cmd
+	local cmd1
+	local cmd2
+	local kq=0
+	local loopforcount
+	local filenameinhex
 	local filelistsize=$(wc -c "$memtemp_local"/"$stoppedfilelist" | awk '{print $1}')
 
 	#read file first
-	if [ ! -f "$memtemp_local"/"$stoppedfilelist" ] || [ "$filelistsize" -eq 0 ] ; then
-		return 1
+	if [ ! -f "$memtemp_local"/"$stoppedfilelist" ] ; then
+		return 255
+	fi
+	
+	if [ "$filelistsize" -eq 0 ] ; then
+		return 0
 	fi
 	
 	appendorcop=$(head -n 1 "$memtemp_local"/"$stoppedfilelist")
@@ -931,34 +944,63 @@ check_file_stopped_suddently(){
 	echo "$foundfile"
 	echo "$foundfilesize"
 	echo "$old_mtime"
-	
-	#truncate -s 0 "$memtemp_local"/"$stoppedfilelist"
+
+	#xu ly file tren remote
+	if [ "$foundfilesize" -gt 0 ] ; then
+		filenameinhex=$(echo "$dir_remote"/"$foundfile" | tr -d '\n' | xxd -pu -c 1000000)
+		for (( loopforcount=0; loopforcount<21; loopforcount+=1 ));
+		do		
+			#vuot timeout
+			if [ "$loopforcount" -eq 20 ] ;  then
+				echo 'xu ly tren remote loi, nghi dai'
+				return 1
+			fi
+			
+			result=$(scp -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" -p "$dir_contains_uploadfiles"/"$truncatefile_inremote" "$destipv6addr_scp":"$memtemp_remote"/)
+			cmd1=$?
+			myprintf "scp 1 truncatefile" "$cmd1"
+			
+			result=$(ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" "$destipv6addr" "bash ${memtemp_remote}/${truncatefile_inremote} null ${filenameinhex} 2 ${foundfilesize}")
+			cmd2=$?
+			myprintf "xu ly lai: run truncatefile in remote" "$cmd2"
+			
+			if [ "$cmd1" -eq 0 ] && [ "$cmd2" -eq 0 ] ; then
+				#thoat vong lap for
+				break
+			else
+				sleep 15			
+			fi	
+		done
+	fi
 	
 	echo 'begin search:'
 	rs=$(find_stopped_file "$dir_local" "$foundfile")
-	if [ "$?" -eq 0 ] ; then
-		echo 'timthay: '"$rs"
-	else
-		return 255
+	cmd="$?"
+	if [ "$cmd" -eq 0 ] ; then
+		mtime=$(stat "$dir_local"/"$foundfile" --printf='%y\n')
+		
+		if [ "$mtime" ] ; then
+			mtime=$(date +'%s' -d "$mtime")
+			append_native_file "$dir_local" "$dir_remote" "$foundfile" "$foundfilesize" "$mtime"
+			cmd="$?"
+			if [ "$cmd" -eq 1 ] ; then
+				kq=1
+			fi
+		fi
 	fi
 	
-	mtime=$(stat "$dir_local"/"$foundfile" --printf='%y\n')
-	
-	if [ "$mtime" ] ; then
-		mtime=$(date +'%s' -d "$mtime")
-		append_native_file "$dir_local" "$dir_remote" "$foundfile" "$foundfilesize" "$mtime"
-	else
-		return 255
-	fi
+	return "$kq"
 }
 
 #-------------------------------------MAIN-----------------------------------------
 
 main(){
+	#dang lam 
 	local dir_ori="$1"
 	local dir_dest="$2"
 	local cmd
 	local result
+	local count
 	
 	if [ ! -d "$memtemp_local" ] ; then
 		mkdir "$memtemp_local"
@@ -969,6 +1011,13 @@ main(){
 		touch "$memtemp_local"/"$stoppedfilelist"
 	fi
 	
+	#add to know_hosts for firsttime
+	if [ -f "$fileprivatekey" ] ; then
+		result=$(ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" "$destipv6addr" "mkdir ${memtemp_remote}")
+		cmd=$?
+		myprintf "mkdir temp at remote" "$cmd"
+	fi
+	
 	while true; do
 	
 		check_network
@@ -977,40 +1026,45 @@ main(){
 		
 		if [ "$cmd" -eq 0 ] && [ -f "$fileprivatekey" ] ; then
 			
-			#add to know_hosts for firsttime
-			result=$(ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" "$destipv6addr" "mkdir ${memtemp_remote}")
-			cmd=$?
-			myprintf "mkdir temp at remote" "$cmd"
+			
 
-			verify_logged
-			cmd=$?
-			myprintf "verify active user" "$cmd"
+			count=0
+			while [ "$count" -lt 5 ] ; do
+				verify_logged
+				cmd=$?
+				myprintf "verify active user" "$cmd"
 
-			#check if a file is stopped suddently
-			#check_file_stopped_suddently
-	
-			#if verifyresult: no active user -> sync_dir
-			if [ "$cmd" -eq 0 ] ; then
-				myecho "begin sync dir"
-				sync_dir "$dir_ori" "$dir_dest"
-				echo "go to sleep 1"
-				sleep "$sleeptime"
-			else
-				echo "go to sleep 2"
-				sleep "$sleeptime"
-			fi
+				#check if a file is stopped suddently
+				if [ "$cmd" -eq 0 ] ; then
+					check_file_stopped_suddently
+					cmd=$?
+					if [] ; then
+						break
+					else
+						count=$(( $count + 1 ))
+				else
+					count=10000
+					break
+				fi
+			done
+
+			myecho "begin sync dir"
+			#sync_dir "$dir_ori" "$dir_dest"
+			echo "go to sleep 1"
+			sleep "$sleeptime"
+			
 		else
-			echo "go to sleep 00"
+			echo "go to sleep 0"
 			sleep "$sleeptime"
 		fi
 	done
 	
 }
 
-main "/home/dungnt/ShellScript/tối quá" "/home/backup/so sánh thư mục"
+#main "/home/dungnt/ShellScript/tối quá" "/home/backup/so sánh thư mục"
 
 #check_file_stopped_suddently
-
+#echo "ket qua chay ham: ""$?"
 #mtime=$(stat "/home/dungnt/ShellScript/tối quá"/"file $\`\" 500mb.txt" --printf='%y\n')
 #mtime=$(date +'%s' -d "$mtime")
 
@@ -1022,5 +1076,5 @@ main "/home/dungnt/ShellScript/tối quá" "/home/backup/so sánh thư mục"
 #append_native_file "/home/dungnt/ShellScript/tối quá" "/home/backup/so sánh thư mục" "file tét.txt" 20000000 "$mainhash"
 #copy_file "/home/dungnt/ShellScript/tối quá" "/home/backup/so sánh thư mục" "noi"
 #append_native_file "/home/dungnt/ShellScript/tối quá" "/home/backup/so sánh thư mục" "noi" 1 "$mainhash"
-#copy_file "/home/dungnt/ShellScript/tối quá" "/home/backup/so sánh thư mục" "file500mb.txt"
-#append_native_file "/home/dungnt/ShellScript/tối quá" "/home/backup/so sánh thư mục" "file $\`\" 500mb.txt" 450000000 "$mtime"
+#copy_file "/home/dungnt/ShellScript/tối quá" "/home/backup/so sánh thư mục" "file $\`\" 500mb.txt"
+#append_native_file "/home/dungnt/ShellScript/tối quá" "/home/backup/so sánh thư mục" "file $\`\" 500mb.txt" 400000000 "$mtime"
