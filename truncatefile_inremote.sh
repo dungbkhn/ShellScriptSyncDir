@@ -147,7 +147,7 @@ elif [ "$3" -eq 4 ] ; then
 	exit 0
 	
 #"$3" -eq 3
-else
+elif [ "$3" -eq 3 ] ; then
 	if [ "$4" -eq 0 ] ; then
 		
 		#co tempfile lai 1 byte
@@ -203,15 +203,27 @@ else
 		if [ "$5" -eq 0 ] ; then
 			rm "$filename"".concatenating"
 		else
-			mv "$filename"".concatenating" "$filename"
-			filesize="$5"
-			truncsize=$(( (filesize / (8*1024*1024) ) * (8*1024*1024) ))
-			truncate -s "$truncsize" "$filename"
-			cat "$partialfile" >> "$filename"
+			if [ ! -f "$filename" ] ; then
+				filesize="$5"
+				truncsize=$(( (filesize / (8*1024*1024) ) * (8*1024*1024) ))
+				truncate -s "$truncsize" "$filename"".concatenating"
+				cat "$partialfile" >> "$filename"".concatenating"
+				mv "$filename"".concatenating" "$filename"
+			fi
 		fi
 		
 		exit 0
 	fi
+#"$3" -eq 2 -- xulylai
+else
+	if [ ! -f "$filename" ] ; then
+		filesize="$4"
+		truncsize=$(( (filesize / (8*1024*1024) ) * (8*1024*1024) ))
+		truncate -s "$truncsize" "$filename"".concatenating"
+		cat "$partialfile" >> "$filename"".concatenating"
+		mv "$filename"".concatenating" "$filename"
+	fi
+	exit 0
 fi
 
 
