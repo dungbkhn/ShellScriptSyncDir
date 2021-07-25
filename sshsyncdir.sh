@@ -625,17 +625,17 @@ append_file_with_hash_checking(){
 	do		
 		#vuot timeout
 		if [ "$loopforcount" -eq 20 ] ;  then
-			echo 'append with hash timeout, nghi dai'
+			mech 'append with hash timeout, nghi dai'
 			return 1
 		fi
 		
 		result=$(scp -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" -p "$dir_contains_uploadfiles"/"$getmd5hash_inremote" "$destipv6addr_scp":"$memtemp_remote"/)
 		cmd1=$?
-		myprintf "scp 1 shellmd5hashfile" "$cmd1"
+		mech "scp 1 shellmd5hashfile ""$cmd1"
 	
 		result=$(ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" "$destipv6addr" "bash ${memtemp_remote}/${getmd5hash_inremote} ${tempfilename}")
 		cmd2=$?
-		echo "get ""$cmd2"" md5sum:""$result"
+		mech "get ""$cmd2"" md5sum:""$result"
 		
 		if [ "$cmd1" -eq 0 ] && [ "$cmd2" -eq 0 ] ; then
 			#thoat vong lap for
@@ -650,7 +650,7 @@ append_file_with_hash_checking(){
 
 	if [ -f "$param1"/"$filename" ] && [ "$filesize" -gt 0 ] ; then
 		truncnum=$(( ( $filesize_remote / 500000000 ) + 1 ))
-		echo 'truncnum ' "$truncnum"
+		mech "truncnum ""$truncnum"
 		dd if="$param1"/"$filename" of="$memtemp_local"/"$temphashfilename" bs="500MB" count="$truncnum" skip=0
 		
 		if [ -f "$memtemp_local"/"$temphashfilename" ] ; then
@@ -658,7 +658,7 @@ append_file_with_hash_checking(){
 			hashlocalfile=$(md5sum "$memtemp_local"/"$temphashfilename" | awk '{ print $1 }')
 			
 			if [ "$hashlocalfile" == "$hashremotefile" ] ; then
-				echo 'has same md5hash after truncate-->continue append'
+				mech 'has same md5hash after truncate-->continue append'
 				mtime=$(stat "$param1"/"$filename" --printf='%y\n')
 				if [ "$mtime" ] ; then
 					mtime=$(date +'%s' -d "$mtime")
@@ -671,23 +671,23 @@ append_file_with_hash_checking(){
 					fi
 					return "$cmd"
 				else
-					echo 'mtime changed-->can not continue append'
+					mech 'mtime changed-->can not continue append'
 					return 252
 				fi
 			else
-				echo 'no same md5hash after truncate-->copy total file'
+				mech 'no same md5hash after truncate-->copy total file'
 				copy_file "$param1" "$param2" "$filename"
 				cmd="$?"
 				return "$cmd"
 			fi
 			
 		else
-			echo 'dd command error, cothe ko thay file'
+			mech 'dd command error, cothe ko thay file'
 			return 253
 		fi
 		
 	else
-		echo 'big error,ko thay file'
+		mech 'big error,ko thay file'
 		return 254
 	fi
 		
