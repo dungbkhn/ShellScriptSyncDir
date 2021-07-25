@@ -693,6 +693,8 @@ append_file_with_hash_checking(){
 		
 }
 
+#----------------------------------------COPY---------------------------------------------
+
 copy_file() {
 	local dir1=$1
 	local dir2=$2
@@ -881,12 +883,6 @@ find_stopped_file(){
 	local bs
 	local workingdir=$(pwd)
 	
-	cd "$dir_ori"/
-	
-	if [ "$?" -eq 1 ] ; then
-		return 1
-	fi
-	
 	for pathname in "$dir_ori"/* ; do
 		if [ -f "$pathname" ] ; then 
 			bs=$(basename "$pathname")
@@ -897,8 +893,6 @@ find_stopped_file(){
 			fi
 		fi
 	done
-	
-	cd "$workingdir"/
 	
 	return "$kq"
 }
@@ -1081,6 +1075,9 @@ main(){
 
 main "/home/dungnt/ShellScript/tối quá" "/home/backup/so sánh thư mục"
 
+
+#find_stopped_file "/home/dungnt/ShellScript/tối quá" "file $\`\" 500mb.txt"
+#echo "$?"
 #check_file_stopped_suddently
 #echo "ket qua chay ham: ""$?"
 #mtime=$(stat "/home/dungnt/ShellScript/tối quá"/"file $\`\" 500mb.txt" --printf='%y\n')
