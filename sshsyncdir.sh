@@ -715,7 +715,7 @@ copy_file() {
 		fi
 		return "$cmd"
 	else
-		echo 'mtime changed-->can not continue copy'
+		mech 'mtime changed-->can not continue copy'
 		return 255
 	fi
 }
@@ -756,7 +756,7 @@ sync_dir(){
 	declare -a nameother
 	declare -a statusother
 	
-	printf "%s vs %s\n" "$param1" "$param2" 
+	#printf "%s vs %s\n" "$param1" "$param2" 
 	
 	#dong bo thu muc truoc
 	find_list_same_dirs "$param1" "$param2"
@@ -825,17 +825,17 @@ sync_dir(){
 					total=$(($total + 1))
 				fi
 			else
-				echo "--------------------""$total"" files received valid---------------------"
+				mech "--------------------""$total"" files received valid---------------------"
 			fi
 		done < "$mytemp"/"$outputfile_inremote"
 		
 		count=0
 		for i in "${!nameother[@]}"
 		do
-			printf '%s status: %s\n' "${nameother[$i]}" "${statusother[$i]}" 
+			#printf '%s status: %s\n' "${nameother[$i]}" "${statusother[$i]}" 
 			count=$(($count + 1))
 		done
-		echo 'file ko duoc tinh------------'"$count"
+		mech 'file ko duoc tinh------------'"$count"
 		
 		count=0
 		for i in "${!name[@]}"
@@ -848,11 +848,11 @@ sync_dir(){
 				#echo "nhung file giong ten nhung khac attribute:""$findresult"
 				if [ "${apporcop[$i]}" -eq 1 ] ; then
 					#file local da bi modify (ko ro vi tri bi modify) ---> append with hash
-					echo "->append:""mtimelc:""${mtime_local[$i]}"" mtime:""${mtime[$i]}""-""$param1"" ""$param2"" ""${name[$i]}"" ""${size[$i]}"
+					mech "->append:""mtimelc:""${mtime_local[$i]}"" mtime:""${mtime[$i]}""-""$param1"" ""$param2"" ""${name[$i]}"" ""${size[$i]}"
 					append_file_with_hash_checking "$param1" "$param2" "${name[$i]}" "${size[$i]}"
 					cmd="$?"
 				else
-					echo "->copy:""$param1"" ""$param2"" ""${name[$i]}"
+					mech "->copy:""$param1"" ""$param2"" ""${name[$i]}"
 					copy_file "$param1" "$param2" "${name[$i]}"
 					cmd="$?"
 				fi
@@ -863,12 +863,12 @@ sync_dir(){
 				fi
 			#neu ko tim thay
 			else
-				printf '**********************************file not found\n'
+				mech '**********************************file not found'
 			fi
 			count=$(($count + 1))
 		done
 		
-		echo "--------------------""$count"" files can append hoac copy ---------------------"
+		mech "--------------------""$count"" files can append hoac copy ---------------------"
 
 	fi
 }
