@@ -887,7 +887,7 @@ find_stopped_file(){
 		if [ -f "$pathname" ] ; then 
 			bs=$(basename "$pathname")
 			if [ "$bs" == "$file" ] ; then
-				echo "$dir_ori"
+				mech "$dir_ori"
 				kq=0
 				break
 			fi
@@ -970,7 +970,7 @@ check_file_stopped_suddently(){
 	fi
 	
 	echo 'begin search:'
-	rs=$(find_stopped_file "$dir_local" "$foundfile")
+	find_stopped_file "$dir_local" "$foundfile"
 	cmd="$?"
 	if [ "$cmd" -eq 0 ] ; then
 		mtime=$(stat "$dir_local"/"$foundfile" --printf='%y\n')
@@ -1004,7 +1004,7 @@ main(){
 	fi
 	
 	if [ ! -f "$memtemp_local"/"$stoppedfilelist" ] ; then
-		echo 'create stoppedfile'
+		mech 'create stoppedfile'
 		touch "$memtemp_local"/"$stoppedfilelist"
 	fi
 	
@@ -1014,10 +1014,10 @@ main(){
 		while [ "$cmd" -eq 255 ] ; do
 			result=$(ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" "$destipv6addr" "mkdir ${memtemp_remote}")
 			cmd=$?
-			myprintf "mkdir temp at remote" "$cmd"
+			mech "mkdir temp at remote ""$cmd"
 		done
 	else
-		echo 'error: key not found, stop!'
+		mech 'error: key not found, stop!'
 		return 1
 	fi
 	
@@ -1027,11 +1027,11 @@ main(){
 		while [ "$count" -lt 3 ] ; do
 			check_network
 			cmd1=$?
-			myprintf "check network" "$cmd1"
+			mech "check network ""$cmd1"
 			
 			verify_logged
 			cmd2=$?
-			myprintf "verify active user" "$cmd2"
+			mech "verify active user ""$cmd2"
 
 			#check if a file is stopped suddently
 			if [ "$cmd1" -eq 0 ] && [ "$cmd2" -eq 0 ] ; then
@@ -1045,7 +1045,7 @@ main(){
 					count=$(( $count + 1 ))
 				fi
 			else
-				echo "go to sleep 1"
+				mech "go to sleep 1"
 				sleep "$sleeptime"
 			fi
 		done
@@ -1054,19 +1054,19 @@ main(){
 		
 		check_network
 		cmd1=$?
-		myprintf "check network" "$cmd1"
+		mech "check network ""$cmd1"
 		
 		verify_logged
 		cmd2=$?
-		myprintf "verify active user" "$cmd2"
+		mech "verify active user ""$cmd2"
 			
 		if [ "$cmd1" -eq 0 ] && [ "$cmd2" -eq 0 ] ; then
-			myecho "begin sync dir"
+			mech "begin sync dir"
 			sync_dir "$dir_ori" "$dir_dest"
-			echo "go to sleep 2"
+			mech "go to sleep 2"
 			sleep "$sleeptime"
 		else
-			echo "go to sleep 3"
+			mech "go to sleep 3"
 			sleep "$sleeptime"
 		fi
 
