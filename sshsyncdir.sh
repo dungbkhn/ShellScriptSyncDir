@@ -36,7 +36,7 @@ OS_Ver=1
 
 #----------------------------------------TOOLS-------------------------------------
 
-myecho(){
+mech(){
 	local param=$1
 	
 	if [ $prt -eq 1 ]; then
@@ -113,7 +113,7 @@ verify_logged() {
 	
 		result=$(ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" "$destipv6addr" "tail -n 1 ${logtimedir_remote}/${logtimefile}")
 		cmd=$?
-		echo "$result"
+		#echo "$result"
 		
 		if [ "$cmd" -eq 0 ] ; then
 				if [ "$result" ] ; then
@@ -121,7 +121,7 @@ verify_logged() {
 					value="$result"
 					delaytime=$(( ( $curtime - $value ) / 60000 ))
 					
-					printf 'delaytime:%s\n' "$delaytime"" minutes"
+					#printf 'delaytime:%s\n' "$delaytime"" minutes"
 					
 					if [ "$delaytime" -gt 6 ] ; then
 						#ko thay active web user
