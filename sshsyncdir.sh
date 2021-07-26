@@ -192,17 +192,13 @@ find_list_same_files () {
 	cmd1=$?
 	mech "scp 1 listfile ""$cmd1"
 			
-	result=$(scp -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" -p "$dir_contains_uploadfiles"/"$compare_listfile_inremote" "$destipv6addr_scp":"$memtemp_remote"/)
-	cmd2=$?
-	mech "scp 1 shellfile ""$cmd2"
-
 	result=$(ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" "$destipv6addr" "rm ${memtemp_remote}/${outputfile_inremote}")
-	cmd3=$?
+	cmd2=$?
+	mech "ssh remove old outputfile ""$cmd2"
 	
-	mech "ssh remove old outputfile ""$cmd3"
 	pathname=$(echo "$param2" | tr -d '\n' | xxd -pu -c 1000000)
 	
-	if [ "$cmd1" -eq 0 ] && [ "$cmd2" -eq 0 ] && [ "$cmd3" -ne 255 ] ; then
+	if [ "$cmd1" -eq 0 ] && [ "$cmd2" -ne 255 ] ; then
 		for (( loopforcount=0; loopforcount<21; loopforcount+=1 ));
 		do
 			result=$(ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" "$destipv6addr" "bash ${memtemp_remote}/${compare_listfile_inremote} ${listfiles} ${pathname} ${outputfile_inremote}")
@@ -282,18 +278,14 @@ find_list_same_dirs () {
 	result=$(scp -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" -p "$memtemp_local"/"$listfiles" "$destipv6addr_scp":"$memtemp_remote"/)
 	cmd1=$?
 	mech "scp 1 listfile ""$cmd1"
-			
-	result=$(scp -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" -p "$dir_contains_uploadfiles"/"$compare_listdir_inremote" "$destipv6addr_scp":"$memtemp_remote"/)
-	cmd2=$?
-	mech "scp 1 shellfile ""$cmd2"
-
-	result=$(ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" "$destipv6addr" "rm ${memtemp_remote}/${outputdir_inremote}")
-	cmd3=$?
 	
-	mech "ssh remove old outputfile ""$cmd3"
+	result=$(ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" "$destipv6addr" "rm ${memtemp_remote}/${outputdir_inremote}")
+	cmd2=$?
+	mech "ssh remove old outputfile ""$cmd2"
+	
 	pathname=$(echo "$param2" | tr -d '\n' | xxd -pu -c 1000000)
 	
-	if [ "$cmd1" -eq 0 ] && [ "$cmd2" -eq 0 ] && [ "$cmd3" -ne 255 ] ; then
+	if [ "$cmd1" -eq 0 ] && [ "$cmd2" -ne 255 ] ; then
 		for (( loopforcount=0; loopforcount<21; loopforcount+=1 ));
 		do
 			result=$(ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" "$destipv6addr" "bash ${memtemp_remote}/${compare_listdir_inremote} ${listfiles} ${pathname} ${outputdir_inremote}")
@@ -752,7 +744,7 @@ sync_dir(){
 	declare -a nameother
 	declare -a statusother
 	
-	#printf "%s vs %s\n" "$param1" "$param2" 
+	mech "compare ""$param1"" ""$param2" 
 	
 	#dong bo thu muc truoc
 	find_list_same_dirs "$param1" "$param2"
@@ -1016,6 +1008,30 @@ main(){
 			done
 		else
 			mech 'error: truncate file  not found, stop!'
+			return 1
+		fi
+		
+		if [ -f "$dir_contains_uploadfiles"/"$compare_listfile_inremote" ] ; then
+			cmd=255
+			while [ "$cmd" -ne 0 ] ; do
+				result=$(scp -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" -p "$dir_contains_uploadfiles"/"$compare_listfile_inremote" "$destipv6addr_scp":"$memtemp_remote"/)
+				cmd=$?
+				mech "scp 1 comparelist file ""$cmd"
+			done
+		else
+			mech 'error: comparelist file  not found, stop!'
+			return 1
+		fi
+		
+		if [ -f "$dir_contains_uploadfiles"/"$compare_listdir_inremote" ] ; then
+			cmd=255
+			while [ "$cmd" -ne 0 ] ; do
+				result=$(scp -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" -p "$dir_contains_uploadfiles"/"$compare_listdir_inremote" "$destipv6addr_scp":"$memtemp_remote"/)
+				cmd=$?
+				mech "scp 1 comparelistdir file ""$cmd"
+			done
+		else
+			mech 'error: comparelistdir file not found, stop!'
 			return 1
 		fi
 	else
