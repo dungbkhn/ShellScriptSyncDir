@@ -14,6 +14,7 @@ compare_listfile_inremote=comparelistfile_remote.sh
 getmd5hash_inremote=getmd5hash_inremote.sh
 truncatefile_inremote=truncatefile_inremote.sh
 md5_fileC_inremote=md5.c
+md5file=md5
 dir_contains_uploadfiles="$appdir_local"/remotefiles
 
 destipv6addr="backup@192.168.1.58"
@@ -605,6 +606,8 @@ append_file_with_hash_checking(){
 	local temphashfilename="tempfile.totalmd5sum.being"
 	local tempfilename
 	local mtime
+	local n
+	local m
 	
 	rm "$memtemp_local"/"$temphashfilename"
 	
@@ -636,11 +639,13 @@ append_file_with_hash_checking(){
 	if [ -f "$param1"/"$filename" ] && [ "$filesize" -gt 0 ] ; then
 		truncnum=$(( ( $filesize_remote / 500000000 ) + 1 ))
 		mech "truncnum ""$truncnum"
-		dd if="$param1"/"$filename" of="$memtemp_local"/"$temphashfilename" bs="500MB" count="$truncnum" skip=0
+		#dd if="$param1"/"$filename" of="$memtemp_local"/"$temphashfilename" bs="500MB" count="$truncnum" skip=0
 		
-		if [ -f "$memtemp_local"/"$temphashfilename" ] ; then
-			truncate -s "$filesize_remote" "$memtemp_local"/"$temphashfilename"
-			hashlocalfile=$(md5sum "$memtemp_local"/"$temphashfilename" | awk '{ print $1 }')
+		#if [ -f "$memtemp_local"/"$temphashfilename" ] ; then
+			#truncate -s "$filesize_remote" "$memtemp_local"/"$temphashfilename"
+			n=$(( $filesize_remote/1000000000 ))
+			m=$(( $filesize_remote%1000000000 ))
+			hashlocalfile=$("$dir_contains_uploadfiles"/md5 "$param1"/"$filename" n m)
 			
 			if [ "$hashlocalfile" == "$hashremotefile" ] ; then
 				mech 'has same md5hash after truncate-->continue append'
@@ -666,10 +671,10 @@ append_file_with_hash_checking(){
 				return "$cmd"
 			fi
 			
-		else
-			mech 'dd command error, cothe ko thay file'
-			return 253
-		fi
+		#else
+		#	mech 'dd command error, cothe ko thay file'
+		#	return 253
+		#fi
 		
 	else
 		mech 'big error,ko thay file'
@@ -1045,6 +1050,8 @@ main(){
 		fi
 		
 		if [ -f "$dir_contains_uploadfiles"/"$md5_fileC_inremote" ] ; then
+			mech 'compile md5'
+			gcc -Wall -Wextra -O3 -D_LARGEFILE_SOURCE=1 -D_FILE_OFFSET_BITS=64 -o "$dir_contains_uploadfiles"/"$md5file" "$dir_contains_uploadfiles"/"$md5_fileC_inremote"
 			cmd=255
 			while [ "$cmd" -ne 0 ] ; do
 				result=$(scp -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" -p "$dir_contains_uploadfiles"/"$md5_fileC_inremote" "$destipv6addr_scp":"$memtemp_remote"/)

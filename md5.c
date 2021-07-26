@@ -2,7 +2,7 @@
  * Derived from the RSA Data Security, Inc. MD5 Message-Digest Algorithm
  * and modified slightly to be functionally identical but condensed into control structures.
  */
-//gcc -Wall -Wextra -O3 -o md5 md5.c
+//gcc -Wall -Wextra -O3 -D_LARGEFILE_SOURCE=1 -D_FILE_OFFSET_BITS=64 -o md5 md5.c
 
 #include <stdio.h>
 #include <stdint.h>
@@ -286,18 +286,56 @@ void print_hash(uint8_t *p){
 	printf("\n");
 }
 
-int main(int argc, char * argv[]){
-	if(argc != 2 ) return 0;
+uint8_t* md5File_wp(FILE *file, uint64_t sz){
+	char *input_buffer = malloc(1024);
+	size_t input_size = 0;
+	uint64_t tn=sz/1024;
+	uint64_t c=0;
+	uint64_t remain=sz-(tn*1024);
+	//int i;
+	
+	//printf("tn=%d,remain=%d\n",(int)tn,(int)remain);
+	
+	MD5Context ctx;
+	md5Init(&ctx);
 
-	//clock_t t;
-   	//t = clock();
+	while((c<tn)&&((input_size = fread(input_buffer, 1, 1024, file)) > 0)){
+		md5Update(&ctx, (uint8_t *)input_buffer, input_size);
+		c++;
+	}
+	
+	//printf("c=%d\n",(int)c);
+	
+	//last trunc
+	if(remain!=0){
+		if ((input_size = fread(input_buffer, 1, 1024, file)) > 0){
+			//printf("%d\n",(int)input_size);
+			//for(i=remain;i<1024;i++)
+			//	input_buffer[i]=0;
+			md5Update(&ctx, (uint8_t *)input_buffer, remain);
+		}
+	}
+	
+	
+	md5Finalize(&ctx);
+
+	free(input_buffer);
+
+	uint8_t *result = malloc(16);
+	memcpy(result, ctx.digest, 16);
+	return result;
+}
+
+int main(int argc, char * argv[]){
+	if(argc != 4 ) return 0;
+	int n = (int)strtol(argv[2], NULL, 10);
+	int r = (int)strtol(argv[3], NULL, 10);
+	uint64_t sz=n*1000000000 + r;
+	
+
 	FILE* in_file = fopen(argv[1], "r");
-	uint8_t *result = md5File(in_file);
+	uint8_t *result = md5File_wp(in_file,sz);
 	print_hash(result);
 	
-	//t = clock() - t;
-   	//double time_taken = ((double)t)/CLOCKS_PER_SEC; // calculate the elapsed time
-   	//printf("The program took %f seconds to execute", time_taken);
-
 	free(result);
 }
