@@ -13,6 +13,7 @@ compare_listdir_inremote=comparelistdir_remote.sh
 compare_listfile_inremote=comparelistfile_remote.sh
 getmd5hash_inremote=getmd5hash_inremote.sh
 truncatefile_inremote=truncatefile_inremote.sh
+md5_fileC_inremote=md5.c
 dir_contains_uploadfiles="$appdir_local"/remotefiles
 
 destipv6addr="backup@192.168.1.58"
@@ -28,7 +29,7 @@ uploadmd5hashfile=md5hashfile_fromlocal.txt
 stoppedfilelist=stoppedfilelist.txt
 
 #for Sleep
-sleeptime=15m
+sleeptime=30m
 #for PRINTING
 prt=1
 #for OS Ubuntu 64
@@ -617,15 +618,11 @@ append_file_with_hash_checking(){
 			return 1
 		fi
 		
-		result=$(scp -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" -p "$dir_contains_uploadfiles"/"$getmd5hash_inremote" "$destipv6addr_scp":"$memtemp_remote"/)
-		cmd1=$?
-		mech "scp 1 shellmd5hashfile ""$cmd1"
-	
 		result=$(ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" "$destipv6addr" "bash ${memtemp_remote}/${getmd5hash_inremote} ${tempfilename}")
-		cmd2=$?
-		mech "get ""$cmd2"" md5sum:""$result"
+		cmd=$?
+		mech "get ""$cmd"" md5sum:""$result"
 		
-		if [ "$cmd1" -eq 0 ] && [ "$cmd2" -eq 0 ] ; then
+		if [ "$cmd" -eq 0 ] ; then
 			#thoat vong lap for
 			break
 		else
@@ -1034,6 +1031,31 @@ main(){
 			mech 'error: comparelistdir file not found, stop!'
 			return 1
 		fi
+		
+		if [ -f "$dir_contains_uploadfiles"/"$getmd5hash_inremote" ] ; then
+			cmd=255
+			while [ "$cmd" -ne 0 ] ; do
+				result=$(scp -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" -p "$dir_contains_uploadfiles"/"$getmd5hash_inremote" "$destipv6addr_scp":"$memtemp_remote"/)
+				cmd=$?
+				mech "scp 1 shellmd5hashfile ""$cmd"
+			done
+		else
+			mech 'error: shellmd5hashfile file not found, stop!'
+			return 1
+		fi
+		
+		if [ -f "$dir_contains_uploadfiles"/"$md5_fileC_inremote" ] ; then
+			cmd=255
+			while [ "$cmd" -ne 0 ] ; do
+				result=$(scp -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" -p "$dir_contains_uploadfiles"/"$md5_fileC_inremote" "$destipv6addr_scp":"$memtemp_remote"/)
+				cmd=$?
+				mech "scp 1 md5_fileC_inremote ""$cmd"
+			done
+		else
+			mech 'error: md5_fileC_inremote file not found, stop!'
+			return 1
+		fi
+		
 	else
 		mech 'error: key not found, stop!'
 		return 1
