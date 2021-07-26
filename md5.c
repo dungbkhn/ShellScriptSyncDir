@@ -292,7 +292,7 @@ uint8_t* md5File_wp(FILE *file, uint64_t sz){
 	uint64_t tn=sz/1024;
 	uint64_t c=0;
 	uint64_t remain=sz-(tn*1024);
-	//int i;
+
 	
 	//printf("tn=%d,remain=%d\n",(int)tn,(int)remain);
 	
@@ -310,8 +310,6 @@ uint8_t* md5File_wp(FILE *file, uint64_t sz){
 	if(remain!=0){
 		if ((input_size = fread(input_buffer, 1, 1024, file)) > 0){
 			//printf("%d\n",(int)input_size);
-			//for(i=remain;i<1024;i++)
-			//	input_buffer[i]=0;
 			md5Update(&ctx, (uint8_t *)input_buffer, remain);
 		}
 	}
@@ -330,8 +328,8 @@ int main(int argc, char * argv[]){
 	if(argc != 4 ) return 0;
 	int n = (int)strtol(argv[2], NULL, 10);
 	int r = (int)strtol(argv[3], NULL, 10);
-	uint64_t sz=n*1000000000 + r;
-	
+	uint64_t sz=(uint64_t)n*1000000000 + (uint64_t)r;
+	//printf("%d  %d   %lu  %lu\n",n,r,sz,sizeof(uint64_t));
 
 	FILE* in_file = fopen(argv[1], "r");
 	uint8_t *result = md5File_wp(in_file,sz);
