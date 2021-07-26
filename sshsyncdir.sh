@@ -353,15 +353,11 @@ append_native_file(){
 			return 1
 		fi
 		
-		result=$(scp -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" -p "$dir_contains_uploadfiles"/"$truncatefile_inremote" "$destipv6addr_scp":"$memtemp_remote"/)
-		cmd1=$?
-		mech "scp 1 truncatefile ""$cmd1"
-		
 		result=$(ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" "$destipv6addr" "bash ${memtemp_remote}/${truncatefile_inremote} ${memtemp_remote}/${tempfilename} ${filenameinhex} 0 ${filesizeinremote}")
-		cmd2=$?
-		mech "run truncatefile in remote ""$cmd2"
+		cmd=$?
+		mech "run truncatefile in remote ""$cmd"
 		
-		if [ "$cmd1" -eq 0 ] && [ "$cmd2" -eq 0 ] ; then
+		if [ "$cmd" -eq 0 ] ; then
 			#thoat vong lap for
 			break
 		else
@@ -907,8 +903,6 @@ check_file_stopped_suddently(){
 	local rs
 	local mtime
 	local cmd
-	local cmd1
-	local cmd2
 	local kq=0
 	local loopforcount
 	local filenameinhex
@@ -951,16 +945,12 @@ check_file_stopped_suddently(){
 				mech 'xu ly tren remote loi, nghi dai'
 				return 1
 			fi
-			
-			result=$(scp -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" -p "$dir_contains_uploadfiles"/"$truncatefile_inremote" "$destipv6addr_scp":"$memtemp_remote"/)
-			cmd1=$?
-			mech "scp 1 truncatefile ""$cmd1"
-			
+
 			result=$(ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" "$destipv6addr" "bash ${memtemp_remote}/${truncatefile_inremote} null ${filenameinhex} 2 ${foundfilesize}")
-			cmd2=$?
-			mech "xu ly lai: run truncatefile in remote ""$cmd2"
+			cmd=$?
+			mech "xu ly lai: run truncatefile in remote ""$cmd"
 			
-			if [ "$cmd1" -eq 0 ] && [ "$cmd2" -eq 0 ] ; then
+			if [ "$cmd" -eq 0 ] ; then
 				#thoat vong lap for
 				break
 			else
@@ -1016,6 +1006,18 @@ main(){
 			cmd=$?
 			mech "mkdir temp at remote ""$cmd"
 		done
+		
+		if [ -f "$dir_contains_uploadfiles"/"$truncatefile_inremote" ] ; then
+			cmd=255
+			while [ "$cmd" -ne 0 ] ; do
+				result=$(scp -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" -p "$dir_contains_uploadfiles"/"$truncatefile_inremote" "$destipv6addr_scp":"$memtemp_remote"/)
+				cmd=$?
+				mech "scp 1 truncatefile ""$cmd"
+			done
+		else
+			mech 'error: truncate file  not found, stop!'
+			return 1
+		fi
 	else
 		mech 'error: key not found, stop!'
 		return 1
