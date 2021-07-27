@@ -28,6 +28,7 @@ outputfileforcmp_inremote=outputfile_inremote.txt
 outputdirforcmp_inremote=outputdir_inremote.txt
 uploadmd5hashfile=md5hashfile_fromlocal.txt
 stoppedfilelist=stoppedfilelist.txt
+mainlogfile=/home/dungnt/hello.txt
 
 #for Sleep
 sleeptime=30m
@@ -35,6 +36,7 @@ sleeptime=30m
 prt=1
 #for OS Ubuntu 64
 OS_Ver=1
+touch "$mainlogfile"
 
 #----------------------------------------TOOLS-------------------------------------
 
@@ -42,7 +44,7 @@ mech(){
 	local param=$1
 	
 	if [ $prt -eq 1 ]; then
-			echo "$param"
+			echo "$param" >> "$mainlogfile"
 	fi
 }
 
@@ -770,6 +772,10 @@ sync_dir(){
 			#echo "$param1"/"${dirname[$i]}"
 			#echo "$param2"/"${dirname[$i]}"
 			sync_dir "$param1"/"${dirname[$i]}" "$param2"/"${dirname[$i]}"
+			cmd="$?"
+			if [ "$cmd" -eq 1 ] ; then
+				return 1
+			fi
 		done
 	fi
 	
@@ -848,8 +854,8 @@ sync_dir(){
 				fi
 				
 				if [ "$cmd" -eq 1 ] ; then
-					#stop sync
-					break
+					#try to stop sync
+					return 1
 				fi
 			#neu ko tim thay
 			else
@@ -1050,7 +1056,7 @@ main(){
 		fi
 		
 		if [ -f "$dir_contains_uploadfiles"/"$md5_fileC_inremote" ] ; then
-			mech 'compile md5'
+			mech 'compile md5 at local'
 			gcc -Wall -Wextra -O3 -D_LARGEFILE_SOURCE=1 -D_FILE_OFFSET_BITS=64 -o "$dir_contains_uploadfiles"/"$md5file" "$dir_contains_uploadfiles"/"$md5_fileC_inremote"
 			cmd=255
 			while [ "$cmd" -ne 0 ] ; do
@@ -1071,6 +1077,7 @@ main(){
 	
 	while true; do
 		count=0
+		truncate -s 0 "$mainlogfile"
 		while [ "$count" -lt 3 ] ; do
 			check_network
 			cmd1=$?
@@ -1092,7 +1099,8 @@ main(){
 					count=$(( $count + 1 ))
 				fi
 			else
-				mech "go to sleep 1"
+				mech 'will sleep 1'
+				mech "go to sleep"
 				sleep "$sleeptime"
 			fi
 		done
@@ -1110,10 +1118,12 @@ main(){
 		if [ "$cmd1" -eq 0 ] && [ "$cmd2" -eq 0 ] ; then
 			mech "begin sync dir"
 			sync_dir "$dir_ori" "$dir_dest"
-			mech "go to sleep 2"
+			mech 'will sleep 2'
+			mech "go to sleep"
 			sleep "$sleeptime"
 		else
-			mech "go to sleep 3"
+			mech 'will sleep 3'
+			mech "go to sleep"
 			sleep "$sleeptime"
 		fi
 
