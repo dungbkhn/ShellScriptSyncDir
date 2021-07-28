@@ -65,12 +65,15 @@ class MyWindow(gtk.Window):
         self.counter = 10
         self.timeout_id = glib.timeout_add(1000, self.on_timeout, None)
 
-        with open("/home/dungnt/hello.txt", "r") as file:
-            first_line = file.readline()
-            for last_line in file:
+        with open("/home/dungnt/ShellScript/sshsyncapp/.temp/mainlog.txt", "r") as file:
+            line = file.readline()
+            for line in file:
                 pass
-        print("lastline of hello.txt:"+last_line)
-        if last_line == 'go to sleep\n':
+        try:
+            print("lastline of mainlog.txt:"+line)
+        except:
+            line = 'go to sleep\n'
+        if line == 'go to sleep\n':
             self.spinner.stop()
             self.label.set_text('Finished!')
             self.image.set_from_file("/home/dungnt/Pictures/done.jpg")
@@ -96,12 +99,15 @@ class MyWindow(gtk.Window):
             self.timeout_id = glib.timeout_add(1000, self.on_timeout, None)
         
         print(alabeltext)
-        with open("/home/dungnt/hello.txt", "r") as file:
-            first_line = file.readline()
-            for last_line in file:
+        with open("/home/dungnt/ShellScript/sshsyncapp/.temp/mainlog.txt", "r") as file:
+            line = file.readline()
+            for line in file:
                 pass
-        print("lastline of hello.txt:"+last_line)
-        if last_line == 'go to sleep\n':
+        try:
+            print("lastline of mainlog.txt:"+line)
+        except:
+            line = 'go to sleep\n'
+        if line == 'go to sleep\n':
             self.spinner.stop()
             self.label.set_text('Finished!')
             self.image.set_from_file("/home/dungnt/Pictures/done.jpg")

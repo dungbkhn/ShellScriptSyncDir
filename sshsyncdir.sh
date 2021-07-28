@@ -28,15 +28,15 @@ outputfileforcmp_inremote=outputfile_inremote.txt
 outputdirforcmp_inremote=outputdir_inremote.txt
 uploadmd5hashfile=md5hashfile_fromlocal.txt
 stoppedfilelist=stoppedfilelist.txt
-mainlogfile="$appdir_local"/.temp/mainlog.txt
+mainlogfile="$memtemp_local"/mainlog.txt
 
 #for Sleep
-sleeptime=30m
+sleeptime=2m
 #for PRINTING
 prt=1
 #for OS Ubuntu 64
 OS_Ver=1
-touch "$mainlogfile"
+
 
 #----------------------------------------TOOLS-------------------------------------
 
@@ -997,6 +997,8 @@ main(){
 		mech 'create stoppedfile'
 		touch "$memtemp_local"/"$stoppedfilelist"
 	fi
+	
+	touch "$mainlogfile"
 	
 	#add to know_hosts for firsttime
 	if [ -f "$fileprivatekey" ] ; then
