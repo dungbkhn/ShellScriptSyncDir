@@ -28,7 +28,7 @@ outputfileforcmp_inremote=outputfile_inremote.txt
 outputdirforcmp_inremote=outputdir_inremote.txt
 uploadmd5hashfile=md5hashfile_fromlocal.txt
 stoppedfilelist=stoppedfilelist.txt
-mainlogfile=/home/dungnt/hello.txt
+mainlogfile="$appdir_local"/.temp/mainlog.txt
 
 #for Sleep
 sleeptime=30m
