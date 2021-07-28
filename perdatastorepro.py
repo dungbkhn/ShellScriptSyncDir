@@ -128,11 +128,12 @@ class MyWindow(gtk.Window):
         #os.spawnl(os.P_NOWAIT, 'bash /home/dungnt/ShellScript/sshsyncapp/sshsyncdir.sh')
         #batcmd="gedit /home/dungnt/hello.txt"
         #subprocess.check_output(batcmd,shell=True)
-        os.spawnlp(os.P_NOWAIT, 'gedit', 'gedit', '/home/dungnt/hello.txt')
+        os.spawnlp(os.P_NOWAIT, 'gedit', 'gedit', '/home/dungnt/ShellScript/sshsyncapp/.temp/mainlog.txt')
         #subprocess.run(batcmd)
         #messagebox.showinfo("showinfo", "Start App success")
         
     def on_delete_event(event, self, widget):
+        global globalX
         globalX=0
         print(globalX)
         self.hide()
@@ -192,11 +193,13 @@ def menu():
 def note(_):
   #os.system("gedit $HOME/Documents/notes.txt")
   #notify()
-  win = MyWindow()
-  win.connect("delete-event", win.on_delete_event)
-  win.show_all()
-  globalX=1
-  print(globalX)
+  global globalX
+  if globalX==0:
+      win = MyWindow()
+      win.connect("delete-event", win.on_delete_event)
+      win.show_all()
+      globalX=1
+      print(globalX)
   
 def quit(_):
   

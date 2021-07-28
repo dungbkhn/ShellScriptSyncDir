@@ -993,6 +993,9 @@ main(){
 	local cmd2
 	local result
 	local count
+	local mtimedir
+	local mtimedir_check
+	local kq
 	
 	if [ ! -d "$memtemp_local" ] ; then
 		mkdir "$memtemp_local"
@@ -1085,6 +1088,7 @@ main(){
 	while true; do
 		count=0
 		truncate -s 0 "$mainlogfile"
+		
 		while [ "$count" -lt 3 ] ; do
 			check_network
 			cmd1=$?
@@ -1121,19 +1125,39 @@ main(){
 		verify_logged
 		cmd2=$?
 		mech "verify active user ""$cmd2"
-			
+		kq=0
+		
 		if [ "$cmd1" -eq 0 ] && [ "$cmd2" -eq 0 ] ; then
+			mtimedir=$(stat "$dir_ori" --printf='%y\n')
+			mtimedir=$(date +'%s' -d "$mtimedir")
 			mech "begin sync dir"
 			sync_dir "$dir_ori" "$dir_dest"
+			cmd="$?"
+			if [ "$cmd" -eq 1 ] ; then
+				kq=1
+			fi
 			mech 'will sleep 2'
-			mech "go to sleep"
+		else
+			kq=1
+			mech 'will sleep 3'
+		fi
+		
+		
+		if [ "$kq" -eq 1 ] ; then
+			mech "long sleep"
 			sleep "$sleeptime"
 		else
-			mech 'will sleep 3'
 			mech "go to sleep"
-			sleep "$sleeptime"
+			while true; do
+				mtimedir_check=$(stat "$dir_ori" --printf='%y\n')
+				mtimedir_check=$(date +'%s' -d "$mtimedir_check")
+				if [ "$mtimedir" == "$mtimedir_check" ] ;then
+					sleep 20
+				else
+					break
+				fi
+			done
 		fi
-
 	done
 }
 
@@ -1144,8 +1168,7 @@ main "/home/dungnt/ShellScript/MySyncDir" "/var/res/backup"
 #echo "$?"
 #check_file_stopped_suddently
 #echo "ket qua chay ham: ""$?"
-#mtime=$(stat "/home/dungnt/ShellScript/tối quá"/"file $\`\" 500mb.txt" --printf='%y\n')
-#mtime=$(date +'%s' -d "$mtime")
+
 
 
 #find_list_same_files "/home/dungnt/ShellScript/tối quá" "/home/backup/biết sosanh"
