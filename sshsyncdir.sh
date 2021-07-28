@@ -31,9 +31,9 @@ stoppedfilelist=stoppedfilelist.txt
 mainlogfile="$memtemp_local"/mainlog.txt
 
 #for Sleep
-sleeptime=2m
+sleeptime=20m
 #for PRINTING
-prt=1
+prt=3
 #for OS Ubuntu 64
 OS_Ver=1
 
@@ -44,7 +44,12 @@ mech(){
 	local param=$1
 	
 	if [ $prt -eq 1 ]; then
-			echo "$param" >> "$mainlogfile"
+		echo "$param"
+	elif [ $prt -eq 2 ]; then
+		echo "$param" >> "$mainlogfile"
+	elif [ $prt -eq 3 ]; then
+		echo "$param"
+		echo "$param" >> "$mainlogfile"
 	fi
 }
 
@@ -1132,7 +1137,7 @@ main(){
 	done
 }
 
-main "/home/dungnt/ShellScript/tối quá" "/home/backup/so sánh thư mục"
+main "/home/dungnt/ShellScript/MySyncDir" "/var/res/backup"
 
 
 #find_stopped_file "/home/dungnt/ShellScript/tối quá" "file $\`\" 500mb.txt"
