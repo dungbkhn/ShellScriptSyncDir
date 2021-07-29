@@ -1188,7 +1188,6 @@ main(){
 				#mech "$afDirHash"
 				afDirHash=$(echo "$afDirHash" | md5sum )
 				if [ "$befDirHash" == "$afDirHash" ] ; then
-					mech "sleep 20s"
 					sleep 20
 				else
 					break
