@@ -31,12 +31,16 @@ stoppedfilelist=stoppedfilelist.txt
 mainlogfile="$memtemp_local"/mainlog.txt
 
 #for Sleep
-sleeptime=20m
+sleeptime=5m
 #for PRINTING
 prt=3
 #for OS Ubuntu 64
 OS_Ver=1
-
+#for DirHash
+befDirHash=""
+afDirHash=""
+hashcount=0
+hashcountmodulo=0
 
 #----------------------------------------TOOLS-------------------------------------
 
@@ -774,8 +778,15 @@ sync_dir(){
 		
 		for i in "${!dirname[@]}"
 		do
-			#echo "$param1"/"${dirname[$i]}"
+			echo "p1/diri:""$param1""/""${dirname[$i]}"
 			#echo "$param2"/"${dirname[$i]}"
+			befDirHash=$(stat "$param1"/"${dirname[$i]}"  -c '%Y')"$befDirHash"
+			befDirHash=$(ls -all "$param1"/"${dirname[$i]}" | wc -l)"$befDirHash"
+			hashcount=$(($hashcount+1))
+			hashcountmodulo=$(($hashcount%10000))
+			if [ "$hashcountmodulo" -eq 0 ]; then
+				befDirHash=$(echo "$befDirHash" | md5sum | awk '{ print $1 }')
+			fi
 			sync_dir "$param1"/"${dirname[$i]}" "$param2"/"${dirname[$i]}"
 			cmd="$?"
 			if [ "$cmd" -eq 1 ] ; then
@@ -985,6 +996,24 @@ check_file_stopped_suddently(){
 
 #-------------------------------------MAIN-----------------------------------------
 
+get_dir_hash(){
+	local dir_ori="$1"
+	local pathname
+	
+	for pathname in "$dir_ori"/* ; do
+		if [ -d "$pathname" ] ; then 
+			afDirHash=$(stat "$pathname" -c '%Y')"$afDirHash"
+			afDirHash=$(ls -all "$pathname" | wc -l)"$afDirHash"
+			hashcount=$(($hashcount+1))
+			hashcountmodulo=$(($hashcount%10000))
+			if [ "$hashcountmodulo" -eq 0 ]; then
+				afDirHash=$(echo "$afDirHash" | md5sum | awk '{ print $1 }')
+			fi
+			get_dir_hash "$pathname"
+		fi
+	done
+}
+
 main(){
 	local dir_ori="$1"
 	local dir_dest="$2"
@@ -993,8 +1022,6 @@ main(){
 	local cmd2
 	local result
 	local count
-	local mtimedir
-	local mtimedir_check
 	local kq
 	
 	if [ ! -d "$memtemp_local" ] ; then
@@ -1128,9 +1155,10 @@ main(){
 		kq=0
 		
 		if [ "$cmd1" -eq 0 ] && [ "$cmd2" -eq 0 ] ; then
-			mtimedir=$(stat "$dir_ori" --printf='%y\n')
-			mtimedir=$(date +'%s' -d "$mtimedir")
+			#mtimedir=$(stat "$dir_ori" --printf='%y\n')
+			#mtimedir=$(date +'%s' -d "$mtimedir")
 			mech "begin sync dir"
+			befDirHash=$(stat "$dir_ori" -c '%Y')
 			sync_dir "$dir_ori" "$dir_dest"
 			cmd="$?"
 			if [ "$cmd" -eq 1 ] ; then
@@ -1143,15 +1171,24 @@ main(){
 		fi
 		
 		
+		befDirHash=$(echo "$befDirHash" | md5sum )
+		mech "$befDirHash"
+		
 		if [ "$kq" -eq 1 ] ; then
 			mech "long sleep"
 			sleep "$sleeptime"
 		else
 			mech "go to sleep"
+			
 			while true; do
-				mtimedir_check=$(stat "$dir_ori" --printf='%y\n')
-				mtimedir_check=$(date +'%s' -d "$mtimedir_check")
-				if [ "$mtimedir" == "$mtimedir_check" ] ;then
+				if [ -d "$dir_ori" ] ; then
+					afDirHash=$(stat "$dir_ori" -c '%Y')
+					get_dir_hash "$dir_ori"
+				fi
+				#mech "$afDirHash"
+				afDirHash=$(echo "$afDirHash" | md5sum )
+				if [ "$befDirHash" == "$afDirHash" ] ; then
+					mech "sleep 20s"
 					sleep 20
 				else
 					break
