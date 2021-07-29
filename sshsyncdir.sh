@@ -29,6 +29,7 @@ outputdirforcmp_inremote=outputdir_inremote.txt
 uploadmd5hashfile=md5hashfile_fromlocal.txt
 stoppedfilelist=stoppedfilelist.txt
 mainlogfile="$memtemp_local"/mainlog.txt
+errorfile=errors.txt
 
 #for Sleep
 sleeptime=5m
@@ -1029,11 +1030,15 @@ main(){
 	fi
 	
 	if [ ! -f "$memtemp_local"/"$stoppedfilelist" ] ; then
-		mech 'create stoppedfile'
+		#mech 'create stoppedfile'
 		touch "$memtemp_local"/"$stoppedfilelist"
 	fi
 	
 	touch "$mainlogfile"
+	truncate -s 0 "$mainlogfile"
+	touch "$memtemp_local"/"$errorfile"
+	truncate -s 0 "$memtemp_local"/"$errorfile"
+	prt=1
 	
 	#add to know_hosts for firsttime
 	if [ -f "$fileprivatekey" ] ; then
@@ -1111,7 +1116,7 @@ main(){
 		return 1
 	fi
 	
-	
+	prt=3
 	while true; do
 		count=0
 		truncate -s 0 "$mainlogfile"
@@ -1170,7 +1175,7 @@ main(){
 			mech 'will sleep 3'
 		fi
 		
-		
+		cp "$memtemp_local"/"$stoppedfilelist" "$memtemp_local"/"$errorfile"
 		befDirHash=$(echo "$befDirHash" | md5sum )
 		mech "$befDirHash"
 		

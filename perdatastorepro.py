@@ -52,12 +52,12 @@ class MyWindow(gtk.Window):
         self.button = gtk.Button(label="Details")
         self.button.set_halign(gtk.Align.CENTER)
         self.button.set_valign(gtk.Align.CENTER)
-        self.button.connect("clicked", self.on_button_clicked)
+        self.button.connect("clicked", self.on_details_button_clicked)
         
         self.button2 = gtk.Button(label="Errors")
         self.button2.set_halign(gtk.Align.CENTER)
         self.button2.set_valign(gtk.Align.CENTER)
-        self.button2.connect("clicked", self.on_button_clicked)
+        self.button2.connect("clicked", self.on_errors_button_clicked)
         
         self.subbox.pack_start(self.button, True, True, 0)
         self.subbox.pack_start(self.button2, True, True, 0)
@@ -116,7 +116,7 @@ class MyWindow(gtk.Window):
             self.label.set_text('Syncing....')
             self.image.set_from_file("/home/dungnt/Pictures/anhcungmau.png")
         
-    def on_button_clicked(self, widget):
+    def on_details_button_clicked(self, widget):
         #n = Notify.Notification.new("Simple GTK3 Application", "Hello World !!")
         #n.show()
         #win2 = MyWindow()
@@ -128,9 +128,13 @@ class MyWindow(gtk.Window):
         #os.spawnl(os.P_NOWAIT, 'bash /home/dungnt/ShellScript/sshsyncapp/sshsyncdir.sh')
         #batcmd="gedit /home/dungnt/hello.txt"
         #subprocess.check_output(batcmd,shell=True)
-        os.spawnlp(os.P_NOWAIT, 'gedit', 'gedit', '/home/dungnt/ShellScript/sshsyncapp/.temp/mainlog.txt')
         #subprocess.run(batcmd)
         #messagebox.showinfo("showinfo", "Start App success")
+        os.spawnlp(os.P_NOWAIT, 'gedit', 'gedit', '/home/dungnt/ShellScript/sshsyncapp/.temp/mainlog.txt')
+
+    def on_errors_button_clicked(self, widget):
+        os.spawnlp(os.P_NOWAIT, 'gedit', 'gedit', '/home/dungnt/ShellScript/sshsyncapp/.temp/errors.txt')
+        
         
     def on_delete_event(event, self, widget):
         global globalX
