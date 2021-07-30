@@ -17,8 +17,8 @@ md5_fileC_inremote=md5.c
 md5file=md5
 dir_contains_uploadfiles="$appdir_local"/remotefiles
 
-destipv6addr="backup@192.168.1.58"
-destipv6addr_scp="backup@[192.168.1.58]"
+destipv6addr="backup@192.168.1.158"
+destipv6addr_scp="backup@[192.168.1.158]"
 
 fileprivatekey=/home/dungnt/.ssh/id_ed25519_privatekey
 logtimedir_remote=/home/dungnt/StoreProj/logtime
@@ -1047,6 +1047,7 @@ main(){
 			result=$(ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" "$destipv6addr" "mkdir ${memtemp_remote}")
 			cmd=$?
 			mech "mkdir temp at remote ""$cmd"
+			sleep 1
 		done
 		
 		if [ -f "$dir_contains_uploadfiles"/"$truncatefile_inremote" ] ; then
@@ -1055,6 +1056,7 @@ main(){
 				result=$(scp -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" -p "$dir_contains_uploadfiles"/"$truncatefile_inremote" "$destipv6addr_scp":"$memtemp_remote"/)
 				cmd=$?
 				mech "scp 1 truncatefile ""$cmd"
+				sleep 1
 			done
 		else
 			mech 'error: truncate file  not found, stop!'
@@ -1067,6 +1069,7 @@ main(){
 				result=$(scp -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" -p "$dir_contains_uploadfiles"/"$compare_listfile_inremote" "$destipv6addr_scp":"$memtemp_remote"/)
 				cmd=$?
 				mech "scp 1 comparelist file ""$cmd"
+				sleep 1
 			done
 		else
 			mech 'error: comparelist file  not found, stop!'
@@ -1079,6 +1082,7 @@ main(){
 				result=$(scp -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" -p "$dir_contains_uploadfiles"/"$compare_listdir_inremote" "$destipv6addr_scp":"$memtemp_remote"/)
 				cmd=$?
 				mech "scp 1 comparelistdir file ""$cmd"
+				sleep 1
 			done
 		else
 			mech 'error: comparelistdir file not found, stop!'
@@ -1091,6 +1095,7 @@ main(){
 				result=$(scp -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" -p "$dir_contains_uploadfiles"/"$getmd5hash_inremote" "$destipv6addr_scp":"$memtemp_remote"/)
 				cmd=$?
 				mech "scp 1 shellmd5hashfile ""$cmd"
+				sleep 1
 			done
 		else
 			mech 'error: shellmd5hashfile file not found, stop!'
@@ -1105,6 +1110,7 @@ main(){
 				result=$(scp -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" -p "$dir_contains_uploadfiles"/"$md5_fileC_inremote" "$destipv6addr_scp":"$memtemp_remote"/)
 				cmd=$?
 				mech "scp 1 md5_fileC_inremote ""$cmd"
+				sleep 1
 			done
 		else
 			mech 'error: md5_fileC_inremote file not found, stop!'
