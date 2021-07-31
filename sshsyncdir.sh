@@ -32,7 +32,7 @@ mainlogfile="$memtemp_local"/mainlog.txt
 errorfile=errors.txt
 
 #for Sleep
-sleeptime=5m
+sleeptime=10m
 #for PRINTING
 prt=3
 #for OS Ubuntu 64
@@ -194,7 +194,7 @@ find_list_same_files () {
 			#md5tailhash=$(get_src_content_file_md5sum "$pathname")
 			mtime_temp=$(stat "$pathname" --printf='%y\n')
 			mtime=$(date +'%s' -d "$mtime_temp")
-			filesize=$(wc -c "$pathname" | awk '{print $1}')
+			filesize=$(stat -c %s "$pathname")
 			#printf "%s/%s/%s/%s/%s/%s\n" "$pathname" "f" "$filesize" "$md5hash" "$md5tailhash" "$mtime" >> "$mytemp"/"$listfiles"
 			printf "%s/%s/%s/%s/%s\n" "$pathname" "f" "$filesize" "$md5hash" "$mtime" >> "$mytemp"/"$listfiles"
 		fi
@@ -373,7 +373,7 @@ append_native_file(){
 	
 	count=0
 	end=0
-	filesize=$(wc -c "$dir1"/"$filename" | awk '{print $1}')
+	filesize=$(stat -c %s "$dir1"/"$filename")
 	#khi filesize=rong do bi xoa dot ngot --> return <> 0
 	if [ ! "$filesize" ] ; then
 		mech 'Notes: original file has been not found'
@@ -418,7 +418,7 @@ append_native_file(){
 		
 		checksize=$(( ($cutsize + 32)*8*1024*1024 ))
 		
-		newfilesize=$(wc -c "$dir1"/"$filename" | awk '{print $1}')
+		newfilesize=$(stat -c %s "$dir1"/"$filename")
 		mech "$newfilesize"
 		if [ ! "$newfilesize" ] || [ "$newfilesize" -ne "$filesize" ] ; then
 			end=2
@@ -646,7 +646,7 @@ append_file_with_hash_checking(){
 	done
 		
 	hashremotefile=$(echo "$result" | awk '{ print $1 }')
-	filesize=$(wc -c "$param1"/"$filename" | awk '{print $1}')
+	filesize=$(stat -c %s "$param1"/"$filename")
 
 	if [ -f "$param1"/"$filename" ] && [ "$filesize" -gt 0 ] ; then
 		truncnum=$(( ( $filesize_remote / 500000000 ) + 1 ))
@@ -923,7 +923,7 @@ check_file_stopped_suddently(){
 	local kq=0
 	local loopforcount
 	local filenameinhex
-	local filelistsize=$(wc -c "$memtemp_local"/"$stoppedfilelist" | awk '{print $1}')
+	local filelistsize=$(stat -c %s "$memtemp_local"/"$stoppedfilelist")
 
 	#read file first
 	if [ ! -f "$memtemp_local"/"$stoppedfilelist" ] ; then
@@ -1060,6 +1060,7 @@ main(){
 			done
 		else
 			mech 'error: truncate file  not found, stop!'
+			mech "###error###"
 			return 1
 		fi
 		
@@ -1073,6 +1074,7 @@ main(){
 			done
 		else
 			mech 'error: comparelist file  not found, stop!'
+			mech "###error###"
 			return 1
 		fi
 		
@@ -1086,6 +1088,7 @@ main(){
 			done
 		else
 			mech 'error: comparelistdir file not found, stop!'
+			mech "###error###"
 			return 1
 		fi
 		
@@ -1099,6 +1102,7 @@ main(){
 			done
 		else
 			mech 'error: shellmd5hashfile file not found, stop!'
+			mech "###error###"
 			return 1
 		fi
 		
@@ -1114,11 +1118,13 @@ main(){
 			done
 		else
 			mech 'error: md5_fileC_inremote file not found, stop!'
+			mech "###error###"
 			return 1
 		fi
 		
 	else
 		mech 'error: key not found, stop!'
+		mech "###error###"
 		return 1
 	fi
 	
@@ -1189,7 +1195,7 @@ main(){
 			mech "long sleep"
 			sleep "$sleeptime"
 		else
-			mech "go to sleep"
+			mech "###ok###"
 			
 			while true; do
 				if [ -d "$dir_ori" ] ; then
@@ -1209,7 +1215,7 @@ main(){
 }
 
 main "/home/dungnt/ShellScript/MySyncDir" "/var/res/backup"
-
+#main "/home/dungnt/ShellScript/MySyncDir/Setup" "/var/res/backup/Setup"
 
 #find_stopped_file "/home/dungnt/ShellScript/tối quá" "file $\`\" 500mb.txt"
 #echo "$?"

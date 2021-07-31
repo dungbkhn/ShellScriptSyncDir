@@ -54,13 +54,13 @@ class MyWindow(gtk.Window):
         self.button.set_valign(gtk.Align.CENTER)
         self.button.connect("clicked", self.on_details_button_clicked)
         
-        self.button2 = gtk.Button(label="Errors")
-        self.button2.set_halign(gtk.Align.CENTER)
-        self.button2.set_valign(gtk.Align.CENTER)
-        self.button2.connect("clicked", self.on_errors_button_clicked)
+        #self.button2 = gtk.Button(label="Errors")
+        #self.button2.set_halign(gtk.Align.CENTER)
+        #self.button2.set_valign(gtk.Align.CENTER)
+        #self.button2.connect("clicked", self.on_errors_button_clicked)
         
         self.subbox.pack_start(self.button, True, True, 0)
-        self.subbox.pack_start(self.button2, True, True, 0)
+        #self.subbox.pack_start(self.button2, True, True, 0)
         self.box.pack_start(self.subbox, True, True, 2)  
         self.counter = 10
         self.timeout_id = glib.timeout_add(1000, self.on_timeout, None)
@@ -72,11 +72,15 @@ class MyWindow(gtk.Window):
         try:
             print("lastline of mainlog.txt:"+line)
         except:
-            line = 'go to sleep\n'
-        if line == 'go to sleep\n':
+            line = '###ok###\n'
+        if line == '###ok###\n':
             self.spinner.stop()
             self.label.set_text('Finished!')
             self.image.set_from_file("/home/dungnt/Pictures/done.jpg")
+        elif line == '###error###\n':
+            self.spinner.stop()
+            self.label.set_text('Error, need restart!')
+            self.image.set_from_file("/home/dungnt/Pictures/error.png")
         else:
             self.spinner.start()
             self.label.set_text('Syncing....')
@@ -106,11 +110,15 @@ class MyWindow(gtk.Window):
         try:
             print("lastline of mainlog.txt:"+line)
         except:
-            line = 'go to sleep\n'
-        if line == 'go to sleep\n':
+            line = '###ok###\n'
+        if line == '###ok###\n':
             self.spinner.stop()
             self.label.set_text('Finished!')
             self.image.set_from_file("/home/dungnt/Pictures/done.jpg")
+        elif line == '###error###\n':
+            self.spinner.stop()
+            self.label.set_text('Error, need restart!')
+            self.image.set_from_file("/home/dungnt/Pictures/error.png")
         else:
             self.spinner.start()
             self.label.set_text('Syncing....')

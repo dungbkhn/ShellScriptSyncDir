@@ -12,7 +12,7 @@ if [ ! -f "$temp_rm"/md5 ] ; then
 fi
 
 if [ -f "$param" ] ; then
-		filesize=$(wc -c "$param" | awk '{print $1}')
+		filesize=$(stat -c %s "$param")
 		n=$(( $filesize/1000000000 ))
 		m=$(( $filesize%1000000000 ))
         "$temp_rm"/md5 "$param" n m

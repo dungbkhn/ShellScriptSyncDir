@@ -9,39 +9,7 @@ memtemp=/home/backup/.temp
 copyfilesize="10MB"
 truncsize=10000000
 
-
-get_src_content_file_md5sum(){
-	local param1=$1
-	local cmd
-	local filesizedest
-	local cursizedest
-	local mytemp="$memtemp"
-	local kq
-	
-	rm "$mytemp""/output.beingcompare" > /dev/null 2>&1
-	
-	filesizedest=$(wc -c "$param1" | awk '{print $1}')
-	cmd=$?
-	
-	if [ "$cmd" -eq 0 ] && [ "$filesizedest" ] && [ "$filesizedest" -gt 0 ] ; then
-		cursizedest=$(($filesizedest / $truncsize))
-		if [ "$cursizedest" -gt 0 ] ; then
-			cursizedest=$(($cursizedest - 1))
-			dd if="$param1" of="$mytemp""/output.beingcompare" bs="$copyfilesize" count=2 skip="$cursizedest" > /dev/null 2>&1
-		else
-			dd if="$param1" of="$mytemp""/output.beingcompare" bs="$copyfilesize" count=1 skip="0" > /dev/null 2>&1
-		fi
-		
-		kq=$(md5sum "$mytemp""/output.beingcompare" | awk '{ print $1 }')
-		
-	else
-		kq="null"
-	fi
-	
-	echo "$kq"
-}
-
-
+SECONDS=0
 #ten file chua ds file tu phia local
 param1=$1
 #thu muc dang sync phia remote
@@ -106,7 +74,7 @@ if [ -f "$memtemp""/""$param1" ] ; then
 			hassamefile_remote[$count]=0
 			
 			isfile_remote[$count]="f"
-			filesize_remote[$count]=$(wc -c "$pathname" | awk '{print $1}')
+			filesize_remote[$count]=$(stat -c %s "$pathname")
 			md5hash_remote[$count]=$(head -c 1024 "$pathname" | md5sum | awk '{ print $1 }')
 			mtime_temp=$(stat "$pathname" --printf='%y\n')
 			mtime_remote[$count]=$(date +'%s' -d "$mtime_temp")
@@ -119,7 +87,7 @@ if [ -f "$memtemp""/""$param1" ] ; then
 
 	#1:same file
 	#0:can hash tung phan de kiem tra ---> append phai hash
-	#5:chi ton tai phia local do phia remote kich thuoc qua lon nen bi xoa --->can copy
+	#5:chi ton tai phia local do phia remote kich thuoc qua lon nen bi xoa, hoac khac noi dung --->can copy
 	count=0
 	for i in "${!names[@]}" ; do
 
@@ -220,7 +188,7 @@ if [ -f "$memtemp""/""$param1" ] ; then
 			printf "./%s/3/%s/0/null/0/0\n" "${names_remote_nt[$i]}" "${names_remote_nt[$i]}" >> "$memtemp""/""$param3"
 		fi
 	done
-
+	echo "elapsed time (using \$SECONDS): $SECONDS seconds" > "$memtemp""/""thoigian.txt"
 	rm "$memtemp""/""$param1"
 	echo './' >> "$memtemp""/""$param3"
 fi

@@ -162,7 +162,7 @@ elif [ "$3" -eq 3 ] ; then
 		#neu da append xong
 		if [ "$6" -ne 0 ] && [ ! "$rs" ] ; then
 			
-			filesize=$(wc -c "$filename" | awk '{print $1}')
+			filesize=$(stat -c %s "$filename")
 			truncsize=$(( (filesize / (8*1024*1024) ) * (8*1024*1024) ))
 			rm "$partialfile"
 			dd if="$filename" of="$partialfile" bs=10MB count=2 iflag=skip_bytes skip="$truncsize"
