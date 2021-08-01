@@ -171,6 +171,20 @@ elif [ "$3" -eq 4 ] ; then
 		rm "$tempfilename"
 	fi
 	exit 0
+
+#xu ly lai $3=5
+elif [ "$3" -eq 5 ] ; then
+	if [ -f "$tempfilename" ] ; then
+		tempfilesize=$(stat -c %s "$tempfilename")
+		echo "$tempfilesize"
+	fi
+	
+	exit 0
+#xu ly lai $3=6
+else
+	truncsize="$4"
+	truncate -s "$truncsize" "$tempfilename"
+	exit 0
 fi
 
 
