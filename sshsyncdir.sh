@@ -342,7 +342,7 @@ append_native_file(){
 	local filesize
 	local newfilesize
 	local checksize
-	local tempfilename="tempfile.being"
+	local tempfilename="/var/res/backup/.Temp/tempfile.being"
 	local end
 	local truncateparam4
 	local uploadsize
@@ -359,7 +359,7 @@ append_native_file(){
 			return 1
 		fi
 		
-		result=$(ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" "$destipv6addr" "bash ${memtemp_remote}/${truncatefile_inremote} ${memtemp_remote}/${tempfilename} ${filenameinhex} 0 ${filesizeinremote}")
+		result=$(ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" "$destipv6addr" "bash ${memtemp_remote}/${truncatefile_inremote} ${tempfilename} ${filenameinhex} 0 ${filesizeinremote}")
 		cmd=$?
 		mech "run truncatefile in remote ""$cmd"
 		
@@ -380,8 +380,29 @@ append_native_file(){
 		return 250
 	fi
 	
-	uploadsize=$(( $filesize - ($filesizeinremote / (8*1024*1024))*(8*1024*1024) ))
+	uploadsize=$filesize
 	
+	for (( loopforcount=0; loopforcount<21; loopforcount+=1 ));
+	do	
+		#vuot timeout
+		if [ "$loopforcount" -eq 20 ] ;  then
+			mech 'cp file in remote timeout, nghi dai'
+			return 1
+		fi
+		
+		mech 'begin cp file in remote'
+		result=$(ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" "$destipv6addr" "bash ${memtemp_remote}/${truncatefile_inremote} ${tempfilename} ${filenameinhex} 1 ${filesizeinremote}")
+		cmd=$?
+		mech "cp file in remote ""$cmd"
+	
+		if [ "$cmd" -eq 0 ] ; then
+			#thoat vong lap for
+			break
+		else
+			sleep 15			
+		fi	
+	done
+			
 	while true; do
 		for (( loopforcount=0; loopforcount<21; loopforcount+=1 ));
 		do		
@@ -408,7 +429,7 @@ append_native_file(){
 			fi	
 		done
 		
-		rm "$memtemp_local"/"$tempfilename"
+		#rm "$memtemp_local"/"$tempfilename"
 		
 		if [ "$count" -eq 0 ] ; then
 			cutsize=$(( ($filesizeinremote / (8*1024*1024) ) ))
@@ -432,6 +453,7 @@ append_native_file(){
 		
 		SECONDS=0
 		if [ "$newfilesize" -eq "$filesize" ] ; then
+			
 			loopforcount=0
 			while true;
 			do	
@@ -446,7 +468,7 @@ append_native_file(){
 				mech 'begin upload partial file'
 				mech "cutsize: ""$cutsize"
 				
-				dd if="$dir1"/"$filename" bs="8M" count=32 skip="$cutsize" | ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" "$destipv6addr" "cat - >> ${memtemp_remote}/${tempfilename}"
+				dd if="$dir1"/"$filename" bs="8M" count=32 skip="$cutsize" | ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" "$destipv6addr" "cat - >> ${tempfilename}"
 				
 				getpipest=( "${PIPESTATUS[@]}" )
 				mech "upload file to remote ""${getpipest[0]}"" va ""${getpipest[1]}"
@@ -462,7 +484,7 @@ append_native_file(){
 							mech 'truncate file while failing timeout, nghi dai'
 							return 1
 						fi
-						result=$(ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" "$destipv6addr" "bash ${memtemp_remote}/${truncatefile_inremote} ${memtemp_remote}/${tempfilename} ${filenameinhex} 1 ${count}")
+						result=$(ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" "$destipv6addr" "bash ${memtemp_remote}/${truncatefile_inremote} ${tempfilename} ${filenameinhex} 2 ${count}")
 						cmd=$?
 
 						mech "run truncate file while failing in remote ""$cmd"
@@ -494,13 +516,11 @@ append_native_file(){
 					return 1
 				fi
 				
-
 				mech 'begin truncate end file'
-				result=$(ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" "$destipv6addr" "bash ${memtemp_remote}/${truncatefile_inremote} ${memtemp_remote}/${tempfilename} ${filenameinhex} 3 0 ${uploadsize} ${filesizeinremote}")
+				result=$(ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" "$destipv6addr" "bash ${memtemp_remote}/${truncatefile_inremote} ${tempfilename} ${filenameinhex} 3 ${uploadsize}")
 				cmd=$?
 				mech "truncate end file in remote ""$cmd"
-				
-				
+								
 				if [ "$cmd" -eq 0 ] ; then
 					#thoat vong lap for
 					break
@@ -521,7 +541,7 @@ append_native_file(){
 				fi
 				#rsync tu khoi phuc khi mat mang, co mang lai
 				mech 'append last of file'		
-				rsync -vah --append --iconv=utf-8,utf-8 --protect-args -e "ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i ${fileprivatekey}" "$dir1"/"$filename" "$destipv6addr_scp":"$dir2"/"$filename"".concatenating"
+				rsync -vah --append --iconv=utf-8,utf-8 --protect-args -e "ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i ${fileprivatekey}" "$dir1"/"$filename" "$destipv6addr_scp":"$tempfilename"
 				cmd=$?
 				mech "append last of file in remote ""$cmd"
 				
@@ -535,7 +555,7 @@ append_native_file(){
 							mech 'truncate file when rsync fail, timeout, nghi dai'
 							return 1
 						fi
-						result=$(ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" "$destipv6addr" "bash ${memtemp_remote}/${truncatefile_inremote} ${memtemp_remote}/${tempfilename} ${filenameinhex} 4 ${uploadsize}")
+						result=$(ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" "$destipv6addr" "bash ${memtemp_remote}/${truncatefile_inremote} ${tempfilename} ${filenameinhex} 3 ${uploadsize}")
 						cmd=$?
 
 						mech "run truncate file when rsync fail in remote ""$cmd"
@@ -578,7 +598,7 @@ append_native_file(){
 				fi
 				
 				mech 'begin movement file'
-				result=$(ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" "$destipv6addr" "bash ${memtemp_remote}/${truncatefile_inremote} ${memtemp_remote}/${tempfilename} ${filenameinhex} 3 ${truncateparam4} ${filesizeinremote}")
+				result=$(ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" "$destipv6addr" "bash ${memtemp_remote}/${truncatefile_inremote} ${tempfilename} ${filenameinhex} 4 ${truncateparam4}")
 				cmd=$?
 				mech "movement file in remote ""$cmd"
 			
@@ -952,30 +972,6 @@ check_file_stopped_suddently(){
 	mech "$foundfilesize"
 	mech "$old_mtime"
 
-	#xu ly file tren remote
-	if [ "$foundfilesize" -gt 0 ] ; then
-		filenameinhex=$(echo "$dir_remote"/"$foundfile" | tr -d '\n' | xxd -pu -c 1000000)
-		for (( loopforcount=0; loopforcount<21; loopforcount+=1 ));
-		do		
-			#vuot timeout
-			if [ "$loopforcount" -eq 20 ] ;  then
-				mech 'xu ly tren remote loi, nghi dai'
-				return 1
-			fi
-
-			result=$(ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" "$destipv6addr" "bash ${memtemp_remote}/${truncatefile_inremote} null ${filenameinhex} 2 ${foundfilesize}")
-			cmd=$?
-			mech "xu ly lai: run truncatefile in remote ""$cmd"
-			
-			if [ "$cmd" -eq 0 ] ; then
-				#thoat vong lap for
-				break
-			else
-				sleep 15			
-			fi	
-		done
-	fi
-	
 	mech 'begin search:'
 	find_stopped_file "$dir_local" "$foundfile"
 	cmd="$?"
@@ -1214,7 +1210,7 @@ main(){
 	done
 }
 
-main "/home/dungnt/ShellScript/MySyncDir" "/var/res/backup"
+main "/home/dungnt/ShellScript/MySyncDir" "/var/res/backup/SyncDir"
 #main "/home/dungnt/ShellScript/MySyncDir/Setup" "/var/res/backup/Setup"
 
 #find_stopped_file "/home/dungnt/ShellScript/tối quá" "file $\`\" 500mb.txt"
@@ -1223,7 +1219,7 @@ main "/home/dungnt/ShellScript/MySyncDir" "/var/res/backup"
 #echo "ket qua chay ham: ""$?"
 
 
-
+#mt=$(stat "/home/dungnt/ShellScript"/"ubuntu-20.04.2.0-desktop-amd64.iso" -c '%Y')
 #find_list_same_files "/home/dungnt/ShellScript/tối quá" "/home/backup/biết sosanh"
 #find_list_same_dirs "/home/dungnt/ShellScript/tối quá2" "/home/backup/so sánh thư mục"
 #sync_dir "/home/dungnt/ShellScript/tối quá" "/home/backup/so sánh thư mục"
@@ -1233,6 +1229,7 @@ main "/home/dungnt/ShellScript/MySyncDir" "/var/res/backup"
 #append_native_file "/home/dungnt/ShellScript/tối quá" "/home/backup/so sánh thư mục" "noi" 1 "$mainhash"
 #copy_file "/home/dungnt/ShellScript/tối quá" "/home/backup/so sánh thư mục" "file $\`\" 500mb.txt"
 #append_native_file "/home/dungnt/ShellScript/tối quá" "/home/backup/so sánh thư mục" "file $\`\" 500mb.txt" 200000000 "$mtime"
-
+#copy_file /home/dungnt/ShellScript /home/backup ubuntu-20.04.2.0-desktop-amd64.iso
+#append_native_file /home/dungnt/ShellScript /home/backup ubuntu-20.04.2.0-desktop-amd64.iso 500000000 "$mt"
 #filenameinhextest=$(echo "/home/backup/so sánh thư mục"/"file $\`\" 500mb.txt" | tr -d '\n' | xxd -pu -c 1000000)
 #ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" "$destipv6addr" "bash ${memtemp_remote}/${truncatefile_inremote} ${memtemp_remote}/tempfile.being ${filenameinhextest} 3 2 200000000"
