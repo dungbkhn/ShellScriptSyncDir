@@ -658,7 +658,7 @@ append_file_with_hash_checking(){
 			return 1
 		fi
 		
-		result=$(ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" "$destipv6addr" "bash ${memtemp_remote}/${getmd5hash_inremote} ${tempfilename}")
+		result=$(ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" "$destipv6addr" "bash ${memtemp_remote}/${getmd5hash_inremote} ${tempfilename} 0")
 		cmd=$?
 		mech "get ""$cmd"" md5sum:""$result"
 		
@@ -1076,6 +1076,12 @@ getfiles_firsttime_fromremote(){
 	local afterslash_5
 	local count
 	local tempfilename="tempfile.being"
+	local tempfilenameinhex
+	local filesize
+	local n
+	local m
+	local hashlocalfile
+	local hashremotefile
 	
 	pathname=$(echo "$dir2""$interpath" | tr -d '\n' | xxd -pu -c 1000000)
 	
@@ -1121,7 +1127,7 @@ getfiles_firsttime_fromremote(){
 			return 1
 		fi
 		
-		result=$(scp -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" -p "$destipv6addr_scp":${memtemp_remote}/${outputfile} ${memtemp_local}/${outputfile})
+		result=$(scp -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" -p "$destipv6addr_scp":"$memtemp_remote"/"$outputfile" "$memtemp_local"/"$outputfile")
 		cmd=$?
 		mech "scp 1 file ""$cmd"
 		
@@ -1178,17 +1184,85 @@ getfiles_firsttime_fromremote(){
 			getfiles_firsttime_fromremote "$dir1" "$dir2" "$interpath""/""${name[$i]}"
 		else
 			if [ -f "$dir1""$interpath""/""${name[$i]}" ] ; then
-				#temp_headhash=$(head -c 1024 "$dir1""$interpath""/""${name[$i]}" | md5sum | awk '{ print $1 }')
-				#temp_mtime=$(stat "$dir1""$interpath""/""${name[$i]}" -c '%Y')
-				#temp_size=$(stat -c %s "$dir1""$interpath""/""${name[$i]}")
-				#if [ "$temp_headhash" != "${headhash[$i]}" ] || [ "$temp_mtime" != "${mtime[$i]}" ] || [ "$temp_size" != "${size[$i]}" ] ; then
-				#	mech "error 1"
-				#fi
 				mech "file exists, ok"
 			else
 				if [ -d "$dir1""$interpath" ] ; then
-					rsync -vah --inplace --iconv=utf-8,utf-8 --protect-args -e "ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i ${fileprivatekey}" "$destipv6addr_scp":"$dir2""$interpath""/""${name[$i]}" "$memtemp_local"/"$tempfilename"
-					mv "$memtemp_local"/"$tempfilename" "$dir1""$interpath""/""${name[$i]}"
+					if [ -f "$memtemp_local"/"$tempfilename" ] ; then
+						filesize=$(stat -c %s "$memtemp_local"/"$tempfilename")
+						filesize=$(( ($filesize / (8*1024*1024) ) * (8*1024*1024) ))
+						filesize=$(( $filesize - (8*1024*1024) ))
+						if [ "$filesize" -lt 0 ] ; then
+							filesize=0
+						fi
+						
+						truncate -s "$filesize" "$memtemp_local"/"$tempfilename"
+						n=$(( $filesize/1000000000 ))
+						m=$(( $filesize%1000000000 ))
+						
+						if [ "$filesize" -lt 0 ] || [ "$filesize" -gt "${size[$i]}" ] ; then
+							rm "$memtemp_local"/"$tempfilename"
+						else
+							hashlocalfile=$("$dir_contains_uploadfiles"/md5 "$memtemp_local"/"$tempfilename" "$n" "$m")
+							tempfilenameinhex=$(echo "$dir2""$interpath""/""${name[$i]}" | tr -d '\n' | xxd -pu -c 1000000)
+							mech "hashlocalfile ""$n"" ""$m"" ""$hashlocalfile"
+							
+							for (( loopforcount=0; loopforcount<21; loopforcount+=1 ));
+							do		
+								#vuot timeout
+								if [ "$loopforcount" -eq 20 ] ;  then
+									mech 'get hash remote file timeout, nghi dai'
+									return 1
+								fi
+								
+								result=$(ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" "$destipv6addr" "bash ${memtemp_remote}/${getmd5hash_inremote} ${tempfilenameinhex} 1 ${n} ${m}")
+								cmd=$?
+								mech "get hash remote file ""$cmd"" md5sum:""$result"
+								
+								if [ "$cmd" -eq 0 ] ; then
+									#thoat vong lap for
+									break
+								else
+									sleep 15			
+								fi	
+							done
+								
+							hashremotefile=$(echo "$result" | awk '{ print $1 }')
+							
+							
+							if [ "$hashremotefile" != "$hashlocalfile" ] ; then
+								rm "$memtemp_local"/"$tempfilename"
+							else
+								mech "hai hash bang nhau"
+							fi
+						fi
+					fi
+					
+					while true
+					do		
+						rsync -vah --append --inplace --time-limit=20 --iconv=utf-8,utf-8 --protect-args -e "ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i ${fileprivatekey}" "$destipv6addr_scp":"$dir2""$interpath""/""${name[$i]}" "$memtemp_local"/"$tempfilename"
+						cmd=$?
+						mech "rsync get file firsttime ""$cmd"
+						
+						if [ "$cmd" -eq 0 ] ; then
+							#thoat vong lap while
+							break
+						else
+							filesize=$(stat -c %s "$memtemp_local"/"$tempfilename")
+							filesize=$(( $filesize - 1048576 ))
+							if [ "$filesize" -lt 0 ] ; then
+								filesize=0
+							fi
+							truncate -s "$filesize" "$memtemp_local"/"$tempfilename"
+							sleep 5			
+						fi	
+					done
+					
+					if [ ! -f "$dir1""$interpath""/""${name[$i]}" ] ; then
+						mv "$memtemp_local"/"$tempfilename" "$dir1""$interpath""/""${name[$i]}"
+					else
+						rm "$memtemp_local"/"$tempfilename"
+					fi
+					
 				fi
 			fi
 		fi
@@ -1431,15 +1505,10 @@ main(){
 
 
 
-main "/home/dungnt/ShellScript/MySyncDir" "/var/res/backup/SyncDir"
+main "/home/dungnt/MySyncDir" "/var/res/backup/SyncDir"
 #main "/home/dungnt/ShellScript/MySyncDir/Setup" "/var/res/backup/SyncDir/Setup"
 
-
-#find_stopped_file "/home/dungnt/ShellScript/tối quá" "file $\`\" 500mb.txt"
-#echo "$?"
-#check_file_stopped_suddently
-#echo "ket qua chay ham: ""$?"
-
+#getfiles_firsttime_fromremote "/home/dungnt/MySyncDir" "/var/res/backup/SyncDir" ""
 
 #mt=$(stat "/home/dungnt/ShellScript/MySyncDir/Setup"/"debian-10.10.0-amd64-netinst.iso" -c '%Y')
 #find_list_same_files "/home/dungnt/ShellScript/tối quá" "/home/backup/biết sosanh"
