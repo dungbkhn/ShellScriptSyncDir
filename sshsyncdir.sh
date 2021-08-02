@@ -9,6 +9,7 @@ appdir_remote=/home/backup
 memtemp_local="$appdir_local"/.temp
 memtemp_remote="$appdir_remote"/.temp
 
+getlistdirfiles_remote=getlistdirfiles_remote.sh
 compare_listdir_inremote=comparelistdir_remote.sh
 compare_listfile_inremote=comparelistfile_remote.sh
 getmd5hash_inremote=getmd5hash_inremote.sh
@@ -29,7 +30,7 @@ outputdirforcmp_inremote=outputdir_inremote.txt
 uploadmd5hashfile=md5hashfile_fromlocal.txt
 stoppedfilelist=stoppedfilelist.txt
 mainlogfile="$memtemp_local"/mainlog.txt
-errorfile=errors.txt
+#errorfile=errors.txt
 
 #for Sleep
 sleeptime=10m
@@ -1056,6 +1057,144 @@ check_file_stopped_suddently(){
 	return "$kq"
 }
 
+#-------------------------------------GET FILES FROM REMOTE-----------------------------------------
+
+getfiles_firsttime_fromremote(){
+	local dir1="$1"
+	local dir2="$2"
+	local interpath="$3"
+	local cmd
+	local loopforcount
+	local result
+	local pathname
+	local outputfile="outputfile.txt"
+	local beforeslash
+	local afterslash_1
+	local afterslash_2
+	local afterslash_3
+	local afterslash_4
+	local afterslash_5
+	local count
+	local tempfilename="tempfile.being"
+	
+	pathname=$(echo "$dir2""$interpath" | tr -d '\n' | xxd -pu -c 1000000)
+	
+	local temp_name
+	local temp_type
+	local temp_headhash
+	local temp_mtime
+	local temp_size
+	
+	declare -a name
+	declare -a type
+	declare -a headhash
+	declare -a mtime
+	declare -a size
+
+	mech "---------------------Thong tin thu muc ""$dir2""$interpath""--------------------------------"
+	mech "---------------------Tuong ung thu muc ""$dir1""$interpath""--------------------------------"
+	for (( loopforcount=0; loopforcount<21; loopforcount+=1 ));
+	do		
+		#vuot timeout
+		if [ "$loopforcount" -eq 20 ] ;  then
+			mech 'getfiles_firsttime_fromremote timeout, nghi dai'
+			return 1
+		fi
+		
+		result=$(ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" "$destipv6addr" "bash ${memtemp_remote}/${getlistdirfiles_remote} ${pathname} ${memtemp_remote}/${outputfile}")
+		cmd=$?
+		mech "get getfiles_firsttime_fromremote ""$cmd"
+		
+		if [ "$cmd" -eq 0 ] ; then
+			#thoat vong lap for
+			break
+		else
+			sleep 15			
+		fi	
+	done
+	
+	for (( loopforcount=0; loopforcount<21; loopforcount+=1 ));
+	do		
+		#vuot timeout
+		if [ "$loopforcount" -eq 20 ] ;  then
+			mech 'getback getfiles_firsttime_fromremote timeout, nghi dai'
+			return 1
+		fi
+		
+		result=$(scp -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" -p "$destipv6addr_scp":${memtemp_remote}/${outputfile} ${memtemp_local}/${outputfile})
+		cmd=$?
+		mech "scp 1 file ""$cmd"
+		
+		if [ "$cmd" -eq 0 ] ; then
+			#thoat vong lap for
+			break
+		else
+			sleep 15			
+		fi	
+	done
+	
+	count=0
+	while IFS=/ read beforeslash afterslash_1 afterslash_2 afterslash_3 afterslash_4 afterslash_5
+	do
+		name[$count]="$afterslash_1"
+		type[$count]="$afterslash_2"
+		mtime[$count]="$afterslash_3"
+		size[$count]="$afterslash_4"
+		headhash[$count]="$afterslash_5"
+		count=$(($count + 1))
+	done < "$memtemp_local"/"$outputfile"
+
+
+	for i in "${!name[@]}" ; do
+		mech "name:""${name[$i]}"
+		mech "type:""${type[$i]}"
+		mech "mtime:""${mtime[$i]}"
+		mech "size:""${size[$i]}"
+		mech "headhash:""${headhash[$i]}"
+		mech "--------------------------"
+	done
+
+	for i in "${!name[@]}" ; do
+		if [ "${type[$i]}" == "d" ] ; then
+			mech "kiem tra duong dan ton tai khong"
+			mech "tao thu muc"
+			mech "thuc hien de quy"
+		else
+			mech "kiem tra duong dan ton tai khong"
+			mech "rsyn vao bo dem"
+			mech "kiem tra duong dan ton tai khong"
+			mech "mv vao dung vi tri"
+		fi
+		mech "--------------------------"
+	done
+	
+	for i in "${!name[@]}" ; do
+		if [ "${type[$i]}" == "d" ] ; then
+			if [ ! -d "$dir1""$interpath""/""${name[$i]}" ] ; then
+				if [ -d "$dir1""$interpath" ] ; then
+					mkdir "$dir1""$interpath""/""${name[$i]}"
+				fi
+			fi
+			getfiles_firsttime_fromremote "$dir1" "$dir2" "$interpath""/""${name[$i]}"
+		else
+			if [ -f "$dir1""$interpath""/""${name[$i]}" ] ; then
+				#temp_headhash=$(head -c 1024 "$dir1""$interpath""/""${name[$i]}" | md5sum | awk '{ print $1 }')
+				#temp_mtime=$(stat "$dir1""$interpath""/""${name[$i]}" -c '%Y')
+				#temp_size=$(stat -c %s "$dir1""$interpath""/""${name[$i]}")
+				#if [ "$temp_headhash" != "${headhash[$i]}" ] || [ "$temp_mtime" != "${mtime[$i]}" ] || [ "$temp_size" != "${size[$i]}" ] ; then
+				#	mech "error 1"
+				#fi
+				mech "file exists, ok"
+			else
+				if [ -d "$dir1""$interpath" ] ; then
+					rsync -vah --inplace --iconv=utf-8,utf-8 --protect-args -e "ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i ${fileprivatekey}" "$destipv6addr_scp":"$dir2""$interpath""/""${name[$i]}" "$memtemp_local"/"$tempfilename"
+					mv "$memtemp_local"/"$tempfilename" "$dir1""$interpath""/""${name[$i]}"
+				fi
+			fi
+		fi
+	done
+}
+
 #-------------------------------------MAIN-----------------------------------------
 
 get_dir_hash(){
@@ -1094,11 +1233,9 @@ main(){
 		#mech 'create stoppedfile'
 		touch "$memtemp_local"/"$stoppedfilelist"
 	fi
-	
-	touch "$mainlogfile"
+
 	truncate -s 0 "$mainlogfile"
-	touch "$memtemp_local"/"$errorfile"
-	truncate -s 0 "$memtemp_local"/"$errorfile"
+	#truncate -s 0 "$memtemp_local"/"$errorfile"
 	prt=1
 	
 	#add to know_hosts for firsttime
@@ -1183,11 +1320,27 @@ main(){
 			return 1
 		fi
 		
+		if [ -f "$dir_contains_uploadfiles"/"$getlistdirfiles_remote" ] ; then
+			cmd=255
+			while [ "$cmd" -ne 0 ] ; do
+				result=$(scp -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" -p "$dir_contains_uploadfiles"/"$getlistdirfiles_remote" "$destipv6addr_scp":"$memtemp_remote"/)
+				cmd=$?
+				mech "scp 1 getlistdirfiles_remote ""$cmd"
+				sleep 1
+			done
+		else
+			mech 'error: getlistdirfiles_remote file not found, stop!'
+			mech "###error###"
+			return 1
+		fi
+		
 	else
 		mech 'error: key not found, stop!'
 		mech "###error###"
 		return 1
 	fi
+	
+	getfiles_firsttime_fromremote "$dir_ori" "$dir_dest" ""
 	
 	prt=3
 	while true; do
@@ -1248,7 +1401,7 @@ main(){
 			mech 'will sleep 3'
 		fi
 		
-		cp "$memtemp_local"/"$stoppedfilelist" "$memtemp_local"/"$errorfile"
+		#cp "$memtemp_local"/"$stoppedfilelist" "$memtemp_local"/"$errorfile"
 		befDirHash=$(echo "$befDirHash" | md5sum )
 		mech "$befDirHash"
 		
@@ -1275,8 +1428,12 @@ main(){
 	done
 }
 
-#main "/home/dungnt/ShellScript/MySyncDir" "/var/res/backup/SyncDir"
-main "/home/dungnt/ShellScript/MySyncDir/Setup" "/var/res/backup/SyncDir/Setup"
+
+
+
+main "/home/dungnt/ShellScript/MySyncDir" "/var/res/backup/SyncDir"
+#main "/home/dungnt/ShellScript/MySyncDir/Setup" "/var/res/backup/SyncDir/Setup"
+
 
 #find_stopped_file "/home/dungnt/ShellScript/tối quá" "file $\`\" 500mb.txt"
 #echo "$?"
