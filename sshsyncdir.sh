@@ -1299,6 +1299,10 @@ main(){
 	local kq
 	local chdir=0
 	
+	if [ ! -d "$dir_ori" ] ; then
+		return 1
+	fi
+	
 	if [ ! -d "$memtemp_local" ] ; then
 		mkdir "$memtemp_local"
 	fi
@@ -1508,6 +1512,8 @@ main(){
 
 
 main "$1" "/var/res/backup/SyncDir"
+
+
 #main "/home/dungnt/MySyncDir" "/var/res/backup/SyncDir"
 #main "/home/dungnt/ShellScript/MySyncDir/Setup" "/var/res/backup/SyncDir/Setup"
 
