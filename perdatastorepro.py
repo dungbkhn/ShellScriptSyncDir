@@ -176,7 +176,10 @@ class ChangeSyncDirWindow(gtk.Window):
             globalchangedir=0
             global syncdir
             mstr=""
-            if syncdir!=self.entry.get_text():
+            cursyncdir=self.entry.get_text()
+            if cursyncdir[-1] == '/':
+                cursyncdir=cursyncdir[:-1]
+            if syncdir!=cursyncdir:
                 batcmd="bash /home/dungnt/ShellScript/sshsyncapp/changepw.sh 2 " + self.entry.get_text()
                 x = subprocess.check_output(batcmd,shell=True)
                 x = str(x)
@@ -191,7 +194,7 @@ class ChangeSyncDirWindow(gtk.Window):
                       if mstr=="Ok...":
                          global processId
                          print("mstr==OK...")
-                         syncdir=self.entry.get_text()
+                         syncdir=cursyncdir
                          try:
                              batcmd="kill " + str(processId)
                              print(batcmd)
