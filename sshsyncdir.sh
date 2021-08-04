@@ -1097,8 +1097,8 @@ getfiles_firsttime_fromremote(){
 	declare -a mtime
 	declare -a size
 
-	mech "---------------------Thong tin thu muc ""$dir2""$interpath""--------------------------------"
-	mech "---------------------Tuong ung thu muc ""$dir1""$interpath""--------------------------------"
+	#mech "---------------------Thong tin thu muc ""$dir2""$interpath""--------------------------------"
+	#mech "---------------------Tuong ung thu muc ""$dir1""$interpath""--------------------------------"
 	for (( loopforcount=0; loopforcount<21; loopforcount+=1 ));
 	do		
 		#vuot timeout
@@ -1151,28 +1151,28 @@ getfiles_firsttime_fromremote(){
 	done < "$memtemp_local"/"$outputfile"
 
 
-	for i in "${!name[@]}" ; do
-		mech "name:""${name[$i]}"
-		mech "type:""${type[$i]}"
-		mech "mtime:""${mtime[$i]}"
-		mech "size:""${size[$i]}"
-		mech "headhash:""${headhash[$i]}"
-		mech "--------------------------"
-	done
+	#for i in "${!name[@]}" ; do
+	#	mech "name:""${name[$i]}"
+	#	mech "type:""${type[$i]}"
+	#	mech "mtime:""${mtime[$i]}"
+	#	mech "size:""${size[$i]}"
+	#	mech "headhash:""${headhash[$i]}"
+	#	mech "--------------------------"
+	#done
 
-	for i in "${!name[@]}" ; do
-		if [ "${type[$i]}" == "d" ] ; then
-			mech "kiem tra duong dan ton tai khong"
-			mech "tao thu muc"
-			mech "thuc hien de quy"
-		else
-			mech "kiem tra duong dan ton tai khong"
-			mech "rsyn vao bo dem"
-			mech "kiem tra duong dan ton tai khong"
-			mech "mv vao dung vi tri"
-		fi
-		mech "--------------------------"
-	done
+	#for i in "${!name[@]}" ; do
+	#	if [ "${type[$i]}" == "d" ] ; then
+	#		mech "kiem tra duong dan ton tai khong"
+	#		mech "tao thu muc"
+	#		mech "thuc hien de quy"
+	#	else
+	#		mech "kiem tra duong dan ton tai khong"
+	#		mech "rsyn vao bo dem"
+	#		mech "kiem tra duong dan ton tai khong"
+	#		mech "mv vao dung vi tri"
+	#	fi
+	#	mech "--------------------------"
+	#done
 	
 	for i in "${!name[@]}" ; do
 		if [ "${type[$i]}" == "d" ] ; then
@@ -1183,9 +1183,8 @@ getfiles_firsttime_fromremote(){
 			fi
 			getfiles_firsttime_fromremote "$dir1" "$dir2" "$interpath""/""${name[$i]}"
 		else
-			if [ -f "$dir1""$interpath""/""${name[$i]}" ] ; then
-				mech "file exists, ok"
-			else
+			if [ ! -f "$dir1""$interpath""/""${name[$i]}" ] ; then
+			
 				if [ -d "$dir1""$interpath" ] ; then
 					if [ -f "$memtemp_local"/"$tempfilename" ] ; then
 						filesize=$(stat -c %s "$memtemp_local"/"$tempfilename")
