@@ -358,7 +358,8 @@ class ChangePassWindow(gtk.Window):
             print(x)
             x = x.split("\\n")
             x = x[0].split("'")
-            self.textbuffer.set_text(x[1])
+            if len(x) > 1:
+                self.textbuffer.set_text(x[1])
             self.con_button.set_label("Change Password")
             self.entry4.set_editable(False)
             self.entry5.set_editable(False)
