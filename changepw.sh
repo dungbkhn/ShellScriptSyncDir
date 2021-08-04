@@ -102,7 +102,7 @@ else
 		childindir=$(ls -A "$newdir" | wc -l)
 		if [ "$childindir" -eq 0 ] ; then
 			rm "$memtemp_local"/"$stoppedfilelist"
-			echo "Ok, rerun app..."
+			echo "Ok..."
 		else
 			echo "Error, selected dir is not empty"
 		fi

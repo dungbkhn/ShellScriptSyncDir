@@ -22,6 +22,7 @@ globalX3 = 0
 globalX4 = 0
 globalchangepw = 0
 globalchangedir = 0
+syncdir="/home/dungnt/MySyncDir"
 x=0
 #win
 
@@ -108,9 +109,9 @@ class ChangeSyncDirWindow(gtk.Window):
         self.icon = self.render_icon(gtk.STOCK_INDEX, 1)
         self.set_icon(self.icon)
         self.box = gtk.Box(orientation=gtk.Orientation.VERTICAL)
-        
+        global syncdir
         self.entry = gtk.Entry()
-        self.entry.set_text("/home/dungnt/MySyncDir")
+        self.entry.set_text(syncdir)
         self.entry.set_halign(gtk.Align.START)
         self.entry.set_valign(gtk.Align.START)
         self.entry.set_editable(False)
@@ -173,26 +174,33 @@ class ChangeSyncDirWindow(gtk.Window):
 	
         elif globalchangedir==1:
             globalchangedir=0
-            batcmd="bash /home/dungnt/ShellScript/sshsyncapp/changepw.sh 2 " + self.entry.get_text()
-            x = subprocess.check_output(batcmd,shell=True)
-            x = str(x)
-            x = x.split("'")
+            global syncdir
             mstr=""
-            if len(x) > 1:
-               #print(x[1])
-               x = x[1].split("\\n")
-               if len(x) > 1:
-                  mstr=mstr+str(x[0]);
-                  #print(mstr)
-                  if mstr=="Ok, rerun app...":
-                     print("giong nhau")
-                     global processId
-                     batcmd="kill " + str(processId)
-                     print(batcmd)
-                     subprocess.check_output(batcmd,shell=True)
-                     processId = subprocess.Popen(["bash", "/home/dungnt/ShellScript/sshsyncapp/sshsyncdir.sh", self.entry.get_text()]).pid
-                     print('newpid '+str(processId))
-                     mstr=mstr+"\nRerun successfully"
+            if syncdir!=self.entry.get_text():
+                batcmd="bash /home/dungnt/ShellScript/sshsyncapp/changepw.sh 2 " + self.entry.get_text()
+                x = subprocess.check_output(batcmd,shell=True)
+                x = str(x)
+                x = x.split("'")
+                
+                if len(x) > 1:
+                   #print(x[1])
+                   x = x[1].split("\\n")
+                   if len(x) > 1:
+                      mstr=mstr+str(x[0]);
+                      #print(mstr)
+                      if mstr=="Ok...":
+                         global processId
+                         print("mstr==OK...")
+                         syncdir=self.entry.get_text()
+                         batcmd="kill " + str(processId)
+                         print(batcmd)
+                         subprocess.check_output(batcmd,shell=True)
+                         processId = subprocess.Popen(["bash", "/home/dungnt/ShellScript/sshsyncapp/sshsyncdir.sh", syncdir]).pid
+                         print('newpid '+str(processId))
+                         mstr=mstr+"\nRerun successfully"
+            else:
+                 mstr=mstr+"Synchronization Directory is the same"
+                 
             self.con_button.set_label("Change SyncDir")
             self.entry.set_editable(False)
             
@@ -515,7 +523,8 @@ def main():
   #batcmd="rm /home/dungnt/ShellScript/sshsyncapp/.temp/stoppedfilelist.txt"
   #subprocess.check_output(batcmd,shell=True)
   global processId
-  processId = subprocess.Popen(["bash", "/home/dungnt/ShellScript/sshsyncapp/sshsyncdir.sh", "/home/dungnt/MySyncDir"]).pid
+  global syncdir
+  processId = subprocess.Popen(["bash", "/home/dungnt/ShellScript/sshsyncapp/sshsyncdir.sh", syncdir]).pid
   print('pid '+str(processId))
   
 
