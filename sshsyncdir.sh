@@ -1428,6 +1428,10 @@ main(){
 		count=0
 		truncate -s 0 "$mainlogfile"
 		
+		if [ ! -d "$dir_ori" ] ; then
+			return 1
+		fi
+	
 		while [ "$count" -lt 3 ] ; do
 			check_network
 			cmd1=$?
