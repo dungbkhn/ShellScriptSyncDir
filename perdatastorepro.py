@@ -4,7 +4,7 @@ import gi
 gi.require_version("Gtk", "3.0")
 gi.require_version('AppIndicator3', '0.1')
 import os
-from gi.repository import Gtk as gtk, AppIndicator3 as appindicator, GLib as glib
+from gi.repository import Gtk as gtk, AppIndicator3 as appindicator, GLib as glib, Pango
 
 gi.require_version("Notify", "0.7")
 from gi.repository import Notify
@@ -17,14 +17,247 @@ import threading
 
 processId = -1
 globalX = 0
+globalX2 = 0
+globalX3 = 0
+globalchangepw = 0
 x=0
 #win
 
+class ShowRemoteInfoWindow(gtk.Window):
+    def __init__(self):
+        gtk.Window.__init__(self, title="Remote Information")
+
+        self.set_default_size(400, 250)
+        self.set_resizable(False)
+        self.icon = self.render_icon(gtk.STOCK_INDEX, 1)
+        self.set_icon(self.icon)
+        self.box = gtk.Box(orientation=gtk.Orientation.VERTICAL)
+        
+        self.label = gtk.Label(label="Information of Remote Machine")
+        self.label.set_halign(gtk.Align.CENTER)
+        self.label.set_valign(gtk.Align.CENTER)
+        
+        self.con_button = gtk.Button(label="Get Info")
+        self.con_button.connect("clicked", self.on_button_clicked)
+        
+        self.box.pack_start(self.label, False, False, 2)
+
+        self.separator = gtk.Separator()
+        self.box.pack_start(self.separator, False, False, 4)
+        self.grid = gtk.Grid()
+        self.grid.set_hexpand(True)
+        self.grid.set_vexpand(True)
+        self.box.pack_start(self.grid, True, True, 2)
+        self.separator2 = gtk.Separator()
+        self.box.pack_start(self.separator2, False, False, 4)
+        self.box.pack_start(self.con_button, False, False, 2)
+        self.add(self.box)
+        self.create_textview()
+        
+        
+    def create_textview(self):
+        scrolledwindow = gtk.ScrolledWindow()
+        scrolledwindow.set_policy(gtk.PolicyType.NEVER,
+                               gtk.PolicyType.AUTOMATIC)
+        scrolledwindow.set_hexpand(True)
+        scrolledwindow.set_vexpand(True)
+        self.grid.attach(scrolledwindow, 0, 0, 1, 1)
+        
+        self.textview = gtk.TextView()
+        self.textview.set_property('editable', False)
+        self.textbuffer = self.textview.get_buffer()
+        self.textbuffer.set_text(
+			"Press Get Info button to get info from remote machine\n"
+        )
+        scrolledwindow.add(self.textview)
+
+        self.tag_bold = self.textbuffer.create_tag("bold", weight=Pango.Weight.BOLD)
+        self.tag_italic = self.textbuffer.create_tag("italic", style=Pango.Style.ITALIC)
+        self.tag_underline = self.textbuffer.create_tag(
+            "underline", underline=Pango.Underline.SINGLE
+        )
+       
+    def on_button_clicked(self, widget):
+        batcmd="bash /home/dungnt/ShellScript/sshsyncapp/changepw.sh 1"
+        x = subprocess.check_output(batcmd,shell=True)
+        x = str(x)
+        print(x)
+        x = x.split("'")
+        if len(x) > 2:
+             x = x[1].split("\\n")
+             lst = '\n'.join(x)
+             self.textbuffer.set_text(lst)
+        
+        
+    def on_delete_event(event, self, widget):
+        global globalX3
+        globalX3=0
+        print("globalX3 "+str(globalX3))
+        self.hide()
+
+        return True
+        
+class ChangePassWindow(gtk.Window):
+    def __init__(self):
+        gtk.Window.__init__(self, title="Change Password")
+
+        self.set_default_size(400, 250)
+        self.set_resizable(False)
+        self.icon = self.render_icon(gtk.STOCK_INDEX, 1)
+        self.set_icon(self.icon)
+        self.box = gtk.Box(orientation=gtk.Orientation.VERTICAL)
+        
+        self.entry = gtk.Entry()
+        self.entry.set_text("2405:4802:2321:a4e0:872b:27d2:7ce9:ecd7")
+        self.entry.set_halign(gtk.Align.START)
+        self.entry.set_valign(gtk.Align.START)
+        self.entry.set_width_chars(36)
+        self.entry.set_editable(False)
+        self.label = gtk.Label(label="  IPAddress")
+        self.label.set_halign(gtk.Align.CENTER)
+        self.label.set_valign(gtk.Align.CENTER)
+        
+        self.entry2 = gtk.Entry()
+        self.entry2.set_text("store")
+        self.entry2.set_halign(gtk.Align.START)
+        self.entry2.set_valign(gtk.Align.START)
+        self.entry2.set_editable(False)
+        self.label2 = gtk.Label(label="  Username")
+        self.label2.set_halign(gtk.Align.CENTER)
+        self.label2.set_valign(gtk.Align.CENTER)
+        
+        self.pBox = gtk.Box(orientation=gtk.Orientation.HORIZONTAL, spacing=6)
+        self.pBox.pack_start(self.label, False, False, 2)
+        self.pBox.pack_start(self.entry, False, False, 2)
+        
+
+        self.entry3 = gtk.Entry()
+        self.entry3.set_text("22")
+        self.entry3.set_halign(gtk.Align.START)
+        self.entry3.set_valign(gtk.Align.START)
+        self.entry3.set_width_chars(6)
+        self.entry3.set_editable(False)
+        self.label3 = gtk.Label(label="  Port")
+        self.label3.set_halign(gtk.Align.CENTER)
+        self.label3.set_valign(gtk.Align.CENTER)
+        
+        self.pBox2 = gtk.Box(orientation=gtk.Orientation.HORIZONTAL, spacing=6)
+        self.pBox2.pack_start(self.label2, False, False, 2)
+        self.pBox2.pack_start(self.entry2, False, False, 2)
+        self.pBox2.pack_start(self.label3, False, False, 2)
+        self.pBox2.pack_start(self.entry3, False, False, 2)
+        
+        self.entry4 = gtk.Entry()
+        self.entry4.set_text("xxxxxxxx")
+        self.entry4.set_halign(gtk.Align.START)
+        self.entry4.set_valign(gtk.Align.START)
+        self.entry4.set_visibility(False)
+        self.entry4.set_editable(False)
+        self.label4 = gtk.Label(label="Current Password")
+        self.label4.set_halign(gtk.Align.CENTER)
+        self.label4.set_valign(gtk.Align.CENTER)
+        
+        self.entry5 = gtk.Entry()
+        self.entry5.set_text("xxxxxxxx")
+        self.entry5.set_halign(gtk.Align.START)
+        self.entry5.set_valign(gtk.Align.START)
+        self.entry5.set_visibility(False)
+        self.entry5.set_editable(False)
+        self.label5 = gtk.Label(label="New Password")
+        self.label5.set_halign(gtk.Align.CENTER)
+        self.label5.set_valign(gtk.Align.CENTER)
+        
+        self.con_button = gtk.Button(label="Change Password")
+        self.con_button.connect("clicked", self.on_apply_button_clicked)
+        
+        self.pBox3 = gtk.Box(orientation=gtk.Orientation.HORIZONTAL, spacing=6)
+        self.pBox3.pack_start(self.label4, False, False, 2)
+        self.pBox3.pack_start(self.entry4, False, False, 2)
+        self.pBox3.pack_start(self.label5, False, False, 2)
+        self.pBox3.pack_start(self.entry5, False, False, 2)
+        self.pBox3.pack_start(self.con_button, False, False, 2)
+        
+        self.separator1 = gtk.Separator()
+        self.box.pack_start(self.separator1, False, False, 4)
+        self.box.pack_start(self.pBox, False, False, 2)
+        self.box.pack_start(self.pBox2, False, False, 2)
+        self.separator2 = gtk.Separator()
+        self.box.pack_start(self.separator2, False, False, 4)
+        self.box.pack_start(self.pBox3, False, False, 2)
+        self.separator3 = gtk.Separator()
+        self.box.pack_start(self.separator3, False, False, 4)
+        self.grid = gtk.Grid()
+        self.grid.set_hexpand(True)
+        self.grid.set_vexpand(True)
+        self.box.pack_start(self.grid, True, True, 2)
+        
+        self.add(self.box)
+        self.create_textview()
+        
+    def create_textview(self):
+        scrolledwindow = gtk.ScrolledWindow()
+        scrolledwindow.set_policy(gtk.PolicyType.NEVER,
+                               gtk.PolicyType.AUTOMATIC)
+        scrolledwindow.set_hexpand(True)
+        scrolledwindow.set_vexpand(True)
+        self.grid.attach(scrolledwindow, 0, 0, 1, 1)
+        
+        self.textview = gtk.TextView()
+        self.textview.set_property('editable', False)
+        self.textbuffer = self.textview.get_buffer()
+        self.textbuffer.set_text(
+			"Press 'Change Password' button, then type current and new password\n"
+        )
+        scrolledwindow.add(self.textview)
+
+        self.tag_bold = self.textbuffer.create_tag("bold", weight=Pango.Weight.BOLD)
+        self.tag_italic = self.textbuffer.create_tag("italic", style=Pango.Style.ITALIC)
+        self.tag_underline = self.textbuffer.create_tag(
+            "underline", underline=Pango.Underline.SINGLE
+        )
+       
+    def on_apply_button_clicked(self, widget):
+        global globalchangepw
+        if globalchangepw==0:
+            globalchangepw=1
+            self.con_button.set_label("Apply")
+            self.entry4.set_editable(True)
+            self.entry5.set_editable(True)
+            self.textbuffer.set_text("OK, now type current password and new password, then press Apply")
+
+        elif globalchangepw==1:
+            globalchangepw=0
+            pw = self.entry4.get_text()
+            newpw = self.entry5.get_text()
+            print(pw)
+            print(newpw)
+            batcmd="bash /home/dungnt/ShellScript/sshsyncapp/changepw.sh 0 " + str(pw) + " " + str(newpw)
+            x = subprocess.check_output(batcmd,shell=True)
+            x = str(x)
+            print(x)
+            x = x.split("\\n")
+            x = x[0].split("'")
+            self.textbuffer.set_text(x[1])
+            self.con_button.set_label("Change Password")
+            self.entry4.set_editable(False)
+            self.entry5.set_editable(False)
+
+			
+    def on_delete_event(event, self, widget):
+        global globalX2
+        globalX2=0
+        global globalchangepw
+        globalchangepw=0
+        print("globalX2 "+str(globalX2))
+        self.hide()
+
+        return True
+        
 class MyWindow(gtk.Window):
     def __init__(self):
         gtk.Window.__init__(self, title="PerDataStoreProj")
         gtk.Window.set_default_size(self, 200, 340)
-        
+        self.set_resizable(False)
         self.icon = self.render_icon(gtk.STOCK_INDEX, 1)
         self.set_icon(self.icon)
         self.box = gtk.Box(orientation=gtk.Orientation.VERTICAL, spacing=6)
@@ -76,15 +309,15 @@ class MyWindow(gtk.Window):
         if line == '###ok###\n':
             self.spinner.stop()
             self.label.set_text('Finished!')
-            self.image.set_from_file("/home/dungnt/Pictures/done.jpg")
+            self.image.set_from_file("/home/dungnt/PythonProjects/images/done.jpg")
         elif line == '###error###\n':
             self.spinner.stop()
             self.label.set_text('Error, need restart!')
-            self.image.set_from_file("/home/dungnt/Pictures/error.png")
+            self.image.set_from_file("/home/dungnt/PythonProjects/images/error.png")
         else:
             self.spinner.start()
             self.label.set_text('Syncing....')
-            self.image.set_from_file("/home/dungnt/Pictures/anhcungmau.png")
+            self.image.set_from_file("/home/dungnt/PythonProjects/images/anhcungmau.png")
 
     def on_timeout(self, *args, **kwargs):
         self.counter -= 1
@@ -114,15 +347,15 @@ class MyWindow(gtk.Window):
         if line == '###ok###\n':
             self.spinner.stop()
             self.label.set_text('Finished!')
-            self.image.set_from_file("/home/dungnt/Pictures/done.jpg")
+            self.image.set_from_file("/home/dungnt/PythonProjects/images/done.jpg")
         elif line == '###error###\n':
             self.spinner.stop()
             self.label.set_text('Error, need restart!')
-            self.image.set_from_file("/home/dungnt/Pictures/error.png")
+            self.image.set_from_file("/home/dungnt/PythonProjects/images/error.png")
         else:
             self.spinner.start()
             self.label.set_text('Syncing....')
-            self.image.set_from_file("/home/dungnt/Pictures/anhcungmau.png")
+            self.image.set_from_file("/home/dungnt/PythonProjects/images/anhcungmau.png")
         
     def on_details_button_clicked(self, widget):
         #n = Notify.Notification.new("Simple GTK3 Application", "Hello World !!")
@@ -195,6 +428,14 @@ def menu():
   command_one.connect('activate', note)
   menu.append(command_one)
 
+  command_two = gtk.MenuItem(label="Change Password", use_underline=False)
+  command_two.connect('activate', chpw)
+  menu.append(command_two)
+  
+  command_three = gtk.MenuItem(label="Remote Info", use_underline=False)
+  command_three.connect('activate', remoteinfo)
+  menu.append(command_three)
+  
   exittray = gtk.MenuItem(label="Exit", use_underline=True)
   exittray.connect('activate', quit)
   menu.append(exittray)
@@ -203,8 +444,6 @@ def menu():
   return menu
   
 def note(_):
-  #os.system("gedit $HOME/Documents/notes.txt")
-  #notify()
   global globalX
   if globalX==0:
       win = MyWindow()
@@ -212,7 +451,25 @@ def note(_):
       win.show_all()
       globalX=1
       print(globalX)
+
+def chpw(_):
+  global globalX2
+  if globalX2==0:
+      win = ChangePassWindow()
+      win.connect("delete-event", win.on_delete_event)
+      win.show_all()
+      globalX2=1
+      print(globalX2)
   
+def remoteinfo(_):
+  global globalX3
+  if globalX3==0:
+      win = ShowRemoteInfoWindow()
+      win.connect("delete-event", win.on_delete_event)
+      win.show_all()
+      globalX3=1
+      print(globalX3)
+      
 def quit(_):
   
   global processId
@@ -223,10 +480,7 @@ def quit(_):
 
 if __name__ == "__main__":
   main()
-  #while not killer.kill_now:
-  #  time.sleep(2)
-  #  print("doing something in a loop ...")
-  #print("End of the program. I was killed gracefully :)")
+
 
 
 
