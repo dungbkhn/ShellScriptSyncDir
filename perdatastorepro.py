@@ -19,7 +19,9 @@ processId = -1
 globalX = 0
 globalX2 = 0
 globalX3 = 0
+globalX4 = 0
 globalchangepw = 0
+globalchangedir = 0
 x=0
 #win
 
@@ -96,7 +98,118 @@ class ShowRemoteInfoWindow(gtk.Window):
         self.hide()
 
         return True
+  
+class ChangeSyncDirWindow(gtk.Window):
+    def __init__(self):
+        gtk.Window.__init__(self, title="Change SyncDir")
+
+        self.set_default_size(600, 150)
+        self.set_resizable(False)
+        self.icon = self.render_icon(gtk.STOCK_INDEX, 1)
+        self.set_icon(self.icon)
+        self.box = gtk.Box(orientation=gtk.Orientation.VERTICAL)
         
+        self.entry = gtk.Entry()
+        self.entry.set_text("/home/dungnt/MySyncDir")
+        self.entry.set_halign(gtk.Align.START)
+        self.entry.set_valign(gtk.Align.START)
+        self.entry.set_editable(False)
+        self.entry.set_width_chars(40)
+        self.label = gtk.Label(label="Synchronization Directory")
+        self.label.set_halign(gtk.Align.CENTER)
+        self.label.set_valign(gtk.Align.CENTER)
+        
+        self.con_button = gtk.Button(label="Change SyncDir")
+        self.con_button.connect("clicked", self.on_changedir_button_clicked)
+        
+        self.pBox = gtk.Box(orientation=gtk.Orientation.HORIZONTAL, spacing=6)
+        self.pBox.pack_start(self.label, False, False, 2)
+        self.pBox.pack_start(self.entry, False, False, 2)
+        self.pBox.pack_start(self.con_button, False, False, 2)
+        
+        self.box.pack_start(self.pBox, False, False, 2)
+       
+        
+        self.separator1 = gtk.Separator()
+        self.box.pack_start(self.separator1, False, False, 4)
+        
+        self.grid = gtk.Grid()
+        self.grid.set_hexpand(True)
+        self.grid.set_vexpand(True)
+        self.box.pack_start(self.grid, True, True, 2)
+        
+        self.add(self.box)
+        self.create_textview()
+        
+    def create_textview(self):
+        scrolledwindow = gtk.ScrolledWindow()
+        scrolledwindow.set_policy(gtk.PolicyType.NEVER,
+                               gtk.PolicyType.AUTOMATIC)
+        scrolledwindow.set_hexpand(True)
+        scrolledwindow.set_vexpand(True)
+        self.grid.attach(scrolledwindow, 0, 0, 1, 1)
+        
+        self.textview = gtk.TextView()
+        self.textview.set_property('editable', False)
+        self.textbuffer = self.textview.get_buffer()
+        self.textbuffer.set_text(
+			"Press 'Change SyncDir' button, then type new synchronization directory\n"
+        )
+        scrolledwindow.add(self.textview)
+
+        self.tag_bold = self.textbuffer.create_tag("bold", weight=Pango.Weight.BOLD)
+        self.tag_italic = self.textbuffer.create_tag("italic", style=Pango.Style.ITALIC)
+        self.tag_underline = self.textbuffer.create_tag(
+            "underline", underline=Pango.Underline.SINGLE
+        )
+       
+    def on_changedir_button_clicked(self, widget):
+        global globalchangedir
+        if globalchangedir==0:
+            globalchangedir=1
+            self.con_button.set_label("Apply")
+            self.entry.set_editable(True)
+            self.textbuffer.set_text("OK, now type new synchronization directory, then press Apply")
+	
+        elif globalchangedir==1:
+            globalchangedir=0
+            batcmd="bash /home/dungnt/ShellScript/sshsyncapp/changepw.sh 2 " + self.entry.get_text()
+            x = subprocess.check_output(batcmd,shell=True)
+            x = str(x)
+            x = x.split("'")
+            mstr=""
+            if len(x) > 1:
+               #print(x[1])
+               x = x[1].split("\\n")
+               if len(x) > 1:
+                  mstr=mstr+str(x[0]);
+                  #print(mstr)
+                  if mstr=="Ok, rerun app...":
+                     print("giong nhau")
+                     global processId
+                     batcmd="kill " + str(processId)
+                     print(batcmd)
+                     subprocess.check_output(batcmd,shell=True)
+                     processId = subprocess.Popen(["bash", "/home/dungnt/ShellScript/sshsyncapp/sshsyncdir.sh", self.entry.get_text()]).pid
+                     print('newpid '+str(processId))
+                     mstr=mstr+"\nRerun successfully"
+            self.con_button.set_label("Change SyncDir")
+            self.entry.set_editable(False)
+            
+            mstr=mstr+"\nReset by press 'Change SyncDir' button, then type new synchronization directory"
+            self.textbuffer.set_text(mstr)
+            print("globalchangedir" + str(globalchangedir))
+			
+    def on_delete_event(event, self, widget):
+        global globalX4
+        globalX4=0
+        global globalchangedir
+        globalchangedir=0
+        print("globalX4 "+str(globalX4))
+        self.hide()
+
+        return True
+              
 class ChangePassWindow(gtk.Window):
     def __init__(self):
         gtk.Window.__init__(self, title="Change Password")
@@ -398,10 +511,11 @@ def main():
   n.update("PerDataStoreProj Application","Started!")
   # Show it
   n.show()
-  #run sync
-  #os.spawnlp(os.P_WAIT, 'bash', 'bash', '/home/dungnt/ShellScript/sshsyncapp/runfrompython.sh')
+  #khi cai dat phan mem can xoa stoppedfilelist.txt
+  #batcmd="rm /home/dungnt/ShellScript/sshsyncapp/.temp/stoppedfilelist.txt"
+  #subprocess.check_output(batcmd,shell=True)
   global processId
-  processId = subprocess.Popen(["bash", "/home/dungnt/ShellScript/sshsyncapp/sshsyncdir.sh"]).pid
+  processId = subprocess.Popen(["bash", "/home/dungnt/ShellScript/sshsyncapp/sshsyncdir.sh", "/home/dungnt/MySyncDir"]).pid
   print('pid '+str(processId))
   
 
@@ -436,6 +550,10 @@ def menu():
   command_three.connect('activate', remoteinfo)
   menu.append(command_three)
   
+  command_four = gtk.MenuItem(label="Change SyncDir", use_underline=False)
+  command_four.connect('activate', chdir)
+  menu.append(command_four)
+  
   exittray = gtk.MenuItem(label="Exit", use_underline=True)
   exittray.connect('activate', quit)
   menu.append(exittray)
@@ -451,7 +569,16 @@ def note(_):
       win.show_all()
       globalX=1
       print(globalX)
-
+      
+def chdir(_):
+  global globalX4
+  if globalX4==0:
+      win = ChangeSyncDirWindow()
+      win.connect("delete-event", win.on_delete_event)
+      win.show_all()
+      globalX4=1
+      print(globalX4)
+      
 def chpw(_):
   global globalX2
   if globalX2==0:

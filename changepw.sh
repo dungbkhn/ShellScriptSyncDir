@@ -1,15 +1,21 @@
 #!/bin/bash
 
+shopt -s dotglob
+shopt -s nullglob
+
+appdir_local=/home/dungnt/ShellScript/sshsyncapp
+memtemp_local="$appdir_local"/.temp
+stoppedfilelist=stoppedfilelist.txt
 destipv6addr="backup@192.168.1.158"
 fileprivatekey=/home/dungnt/.ssh/id_ed25519_privatekey
 
-password="$2"
-newpassword="$3"
 
 if [ "$1" -eq 0 ] ; then
+	password="$2"
+	newpassword="$3"
 	rs=$(ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" "$destipv6addr" "echo -e '${password}\n${newpassword}\n${newpassword}' | passwd 2>&1 > /dev/null" 2>&1)
 	echo "$rs"
-else
+elif [ "$1" -eq 1 ] ; then
 	rs=$(ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" "$destipv6addr" "lsblk")
 
 	if [ "$?" -ne 0 ] ; then
@@ -90,6 +96,18 @@ Max File Size Support: 16G"
 	else
 		echo "Error while get info from remote machine"
 	fi
-
+else
+	newdir="$2"
+	if [ -d "$newdir" ] ; then
+		childindir=$(ls -A "$newdir" | wc -l)
+		if [ "$childindir" -eq 0 ] ; then
+			rm "$memtemp_local"/"$stoppedfilelist"
+			echo "Ok, rerun app..."
+		else
+			echo "Error, selected dir is not empty"
+		fi
+	else
+		echo "Error, selected dir is not found"
+	fi
 fi
 

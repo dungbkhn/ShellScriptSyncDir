@@ -1297,6 +1297,7 @@ main(){
 	local result
 	local count
 	local kq
+	local chdir=0
 	
 	if [ ! -d "$memtemp_local" ] ; then
 		mkdir "$memtemp_local"
@@ -1304,7 +1305,8 @@ main(){
 	
 	if [ ! -f "$memtemp_local"/"$stoppedfilelist" ] ; then
 		#mech 'create stoppedfile'
-		touch "$memtemp_local"/"$stoppedfilelist"
+		truncate -s 0 "$memtemp_local"/"$stoppedfilelist"
+		chdir=1
 	fi
 
 	truncate -s 0 "$mainlogfile"
@@ -1413,7 +1415,9 @@ main(){
 		return 1
 	fi
 	
-	getfiles_firsttime_fromremote "$dir_ori" "$dir_dest" ""
+	if [ "$chdir" -eq 1 ] ; then
+		getfiles_firsttime_fromremote "$dir_ori" "$dir_dest" ""
+	fi
 	
 	prt=3
 	while true; do
@@ -1503,8 +1507,8 @@ main(){
 
 
 
-
-main "/home/dungnt/MySyncDir" "/var/res/backup/SyncDir"
+main "$1" "/var/res/backup/SyncDir"
+#main "/home/dungnt/MySyncDir" "/var/res/backup/SyncDir"
 #main "/home/dungnt/ShellScript/MySyncDir/Setup" "/var/res/backup/SyncDir/Setup"
 
 #getfiles_firsttime_fromremote "/home/dungnt/MySyncDir" "/var/res/backup/SyncDir" ""
