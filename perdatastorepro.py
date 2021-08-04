@@ -192,9 +192,12 @@ class ChangeSyncDirWindow(gtk.Window):
                          global processId
                          print("mstr==OK...")
                          syncdir=self.entry.get_text()
-                         batcmd="kill " + str(processId)
-                         print(batcmd)
-                         subprocess.check_output(batcmd,shell=True)
+                         try:
+                             batcmd="kill " + str(processId)
+                             print(batcmd)
+                             subprocess.check_output(batcmd,shell=True)
+                         except:
+                             print("no process found")
                          processId = subprocess.Popen(["bash", "/home/dungnt/ShellScript/sshsyncapp/sshsyncdir.sh", syncdir]).pid
                          print('newpid '+str(processId))
                          mstr=mstr+"\nRerun successfully"
@@ -387,12 +390,7 @@ class MyWindow(gtk.Window):
             
         self.spinner = gtk.Spinner()
         self.box.pack_start(self.spinner, True, True, 2)
-        
-        #self.label0 = gtk.Label(label="User0")
-        #self.label0.set_halign(gtk.Align.CENTER)
-        #self.label0.set_valign(gtk.Align.CENTER)
-        #self.label0.set_text('   fgdfg   ')
-        #self.box.pack_start(self.label0, True, True, 2)
+
         
         self.image = gtk.Image()
         self.box.pack_start(self.image, True, True, 2)
@@ -408,11 +406,7 @@ class MyWindow(gtk.Window):
         self.button.set_halign(gtk.Align.CENTER)
         self.button.set_valign(gtk.Align.CENTER)
         self.button.connect("clicked", self.on_details_button_clicked)
-        
-        #self.button2 = gtk.Button(label="Errors")
-        #self.button2.set_halign(gtk.Align.CENTER)
-        #self.button2.set_valign(gtk.Align.CENTER)
-        #self.button2.connect("clicked", self.on_errors_button_clicked)
+
         
         self.subbox.pack_start(self.button, True, True, 0)
         #self.subbox.pack_start(self.button2, True, True, 0)
@@ -434,7 +428,7 @@ class MyWindow(gtk.Window):
             self.image.set_from_file("/home/dungnt/PythonProjects/images/done.jpg")
         elif line == '###error###\n':
             self.spinner.stop()
-            self.label.set_text('Error, need restart!')
+            self.label.set_text('Error, reinstall application!')
             self.image.set_from_file("/home/dungnt/PythonProjects/images/error.png")
         else:
             self.spinner.start()
@@ -456,7 +450,14 @@ class MyWindow(gtk.Window):
             #self.timeout_id = None
             self.counter = 10
             self.timeout_id = glib.timeout_add(1000, self.on_timeout, None)
-        
+            
+        #global processId
+        #batcmd="pgrep -f /home/dungnt/ShellScript/sshsyncapp/sshsyncdir.sh | grep " + str(processId)
+        #try:
+        #    x = subprocess.check_output(batcmd,shell=True)
+        #    print(x)
+        #except:
+        #    print("no process found")
         print(alabeltext)
         with open("/home/dungnt/ShellScript/sshsyncapp/.temp/mainlog.txt", "r") as file:
             line = file.readline()
@@ -472,7 +473,7 @@ class MyWindow(gtk.Window):
             self.image.set_from_file("/home/dungnt/PythonProjects/images/done.jpg")
         elif line == '###error###\n':
             self.spinner.stop()
-            self.label.set_text('Error, need restart!')
+            self.label.set_text('Error, reinstall application!')
             self.image.set_from_file("/home/dungnt/PythonProjects/images/error.png")
         else:
             self.spinner.start()
@@ -480,19 +481,7 @@ class MyWindow(gtk.Window):
             self.image.set_from_file("/home/dungnt/PythonProjects/images/anhcungmau.png")
         
     def on_details_button_clicked(self, widget):
-        #n = Notify.Notification.new("Simple GTK3 Application", "Hello World !!")
-        #n.show()
-        #win2 = MyWindow()
-        #win2.connect("destroy", win)
-        #win2.show_all()
-        #os.system("cp /home/dungnt/SharedFolder/'Pi pc'/links.txt /home/dungnt")
-        #batcmd="/home/dungnt/ShellScript/sshsyncapp/runfrompython.sh"
-        #x = subprocess.check_output(batcmd,shell=False)
-        #os.spawnl(os.P_NOWAIT, 'bash /home/dungnt/ShellScript/sshsyncapp/sshsyncdir.sh')
-        #batcmd="gedit /home/dungnt/hello.txt"
-        #subprocess.check_output(batcmd,shell=True)
-        #subprocess.run(batcmd)
-        #messagebox.showinfo("showinfo", "Start App success")
+    
         os.spawnlp(os.P_NOWAIT, 'gedit', 'gedit', '/home/dungnt/ShellScript/sshsyncapp/.temp/mainlog.txt')
 
     def on_errors_button_clicked(self, widget):
@@ -529,19 +518,6 @@ def main():
   print('pid '+str(processId))
   
 
-  #os.killpg(os.getpgid(processId), signal.SIGTERM)
-  #p = subprocess.Popen("bash /home/dungnt/ShellScript/sshsyncapp/sshsyncdir.sh", stdout=subprocess.PIPE, shell=True)
-  #batcmd="pgrep -f /home/dungnt/ShellScript/sshsyncapp/sshsyncdir.sh"
-  #x = subprocess.check_output(batcmd,shell=True)
-  #x_string = str(x)
-  #print(x_string)
-  #x_string = x_string.split("\\n")
-  #x_string_len=len(x_string)
-  #print('x_string_len ',x_string_len)
-  #x_string = x_string[0].split("'")
-  #global processId
-  #processId=x_string[1]
-  #print('processId ',processId)
   gtk.main()
 
   
@@ -612,7 +588,11 @@ def quit(_):
   global processId
   batcmd="kill " + str(processId)
   print(batcmd)
-  subprocess.check_output(batcmd,shell=True)
+  try:
+      subprocess.check_output(batcmd,shell=True)
+  except:
+	  print("process not found")
+	  
   gtk.main_quit()
 
 if __name__ == "__main__":

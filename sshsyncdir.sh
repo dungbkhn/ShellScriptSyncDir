@@ -1300,6 +1300,7 @@ main(){
 	local chdir=0
 	
 	if [ ! -d "$dir_ori" ] ; then
+		mech "###error###"
 		return 1
 	fi
 	
@@ -1429,6 +1430,7 @@ main(){
 		truncate -s 0 "$mainlogfile"
 		
 		if [ ! -d "$dir_ori" ] ; then
+			mech "###error###"
 			return 1
 		fi
 	
