@@ -1316,15 +1316,43 @@ main(){
 
 	truncate -s 0 "$mainlogfile"
 	#truncate -s 0 "$memtemp_local"/"$errorfile"
-	prt=1
+	prt=3
 	
 	#add to know_hosts for firsttime
 	if [ -f "$fileprivatekey" ] ; then
 		cmd=255
 		while [ "$cmd" -eq 255 ] ; do
-			result=$(ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" "$destipv6addr" "mkdir ${memtemp_remote}")
+			result=$(ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" "$destipv6addr" "mkdir ${memtemp_remote}" 2>&1)
 			cmd=$?
 			mech "mkdir temp at remote ""$cmd"
+			cmd1=$(echo "$result" | grep "No route")
+			if [ "$cmd1" ] ; then
+				mech "No route to remote"
+				mech "###error###"
+				return 1
+			fi
+			cmd1=$(echo "$result" | grep "Permission denied")
+			if [ "$cmd1" ] ; then
+				mech "Wrong key, Permission denied"
+				mech "###error###"
+				return 1
+			fi
+			sleep 1
+		done
+		
+		cmd=255
+		while [ "$cmd" -eq 255 ] ; do
+			result=$(ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" "$destipv6addr" "mkdir /var/res/backup/.Temp")
+			cmd=$?
+			mech "mkdir temp at SyncDir in remote ""$cmd"
+			sleep 1
+		done
+		
+		cmd=255
+		while [ "$cmd" -eq 255 ] ; do
+			result=$(ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" "$destipv6addr" "mkdir /var/res/backup/SyncDir")
+			cmd=$?
+			mech "mkdir SyncDir in remote ""$cmd"
 			sleep 1
 		done
 		
@@ -1424,7 +1452,7 @@ main(){
 		getfiles_firsttime_fromremote "$dir_ori" "$dir_dest" ""
 	fi
 	
-	prt=3
+
 	while true; do
 		count=0
 		truncate -s 0 "$mainlogfile"
@@ -1433,7 +1461,26 @@ main(){
 			mech "###error###"
 			return 1
 		fi
-	
+		
+		if [ ! -f "$fileprivatekey" ] ; then
+			mech "###error###"
+			return 1
+		fi
+		
+		result=$(ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" "$destipv6addr" "ls" 2>&1)
+		cmd1=$(echo "$result" | grep "No route")
+		if [ "$cmd1" ] ; then
+			mech "No route to remote"
+			mech "###error###"
+			return 1
+		fi
+		cmd1=$(echo "$result" | grep "Permission denied")
+		if [ "$cmd1" ] ; then
+			mech "Wrong key, Permission denied"
+			mech "###error###"
+			return 1
+		fi
+			
 		while [ "$count" -lt 3 ] ; do
 			check_network
 			cmd1=$?
