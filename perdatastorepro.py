@@ -384,7 +384,7 @@ class ChangePassWindow(gtk.Window):
 class MyWindow(gtk.Window):
     def __init__(self):
         gtk.Window.__init__(self, title="PerDataStoreProj")
-        gtk.Window.set_default_size(self, 200, 340)
+        gtk.Window.set_default_size(self, 250, 340)
         self.set_resizable(False)
         self.icon = self.render_icon(gtk.STOCK_INDEX, 1)
         self.set_icon(self.icon)
@@ -431,7 +431,7 @@ class MyWindow(gtk.Window):
             self.image.set_from_file("/home/dungnt/PythonProjects/images/done.jpg")
         elif line == '###error###\n':
             self.spinner.stop()
-            self.label.set_text('Error, reinstall application!')
+            self.label.set_text(' Error due to:\n SyncDir not found\n or Remote Machine not reachable\n\n You can fix it manually\n Or Reinstall application to fix it!')
             self.image.set_from_file("/home/dungnt/PythonProjects/images/error.png")
         else:
             self.spinner.start()
@@ -476,7 +476,7 @@ class MyWindow(gtk.Window):
             self.image.set_from_file("/home/dungnt/PythonProjects/images/done.jpg")
         elif line == '###error###\n':
             self.spinner.stop()
-            self.label.set_text('Error, reinstall application!')
+            self.label.set_text(' Error due to:\n SyncDir not found\n or Remote Machine not reachable\n\n You can fix it manually\n Or Reinstall application to fix it!')
             self.image.set_from_file("/home/dungnt/PythonProjects/images/error.png")
         else:
             self.spinner.start()
