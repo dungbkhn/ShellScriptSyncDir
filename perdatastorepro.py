@@ -201,7 +201,7 @@ class ChangeSyncDirWindow(gtk.Window):
                              subprocess.check_output(batcmd,shell=True)
                          except:
                              print("no process found")
-                         processId = subprocess.Popen(["bash", "/home/dungnt/ShellScript/sshsyncapp/sshsyncdir.sh", syncdir]).pid
+                         processId = subprocess.Popen(["bash", "/home/dungnt/ShellScript/sshsyncapp/sshsyncdir.sh", syncdir, "/home/dungnt/ShellScript/sshsyncapp", "192.168.1.158", "/home/dungnt/.ssh/id_ed25519_privatekey"]).pid
                          print('newpid '+str(processId))
                          mstr=mstr+"\nRerun successfully"
             else:
@@ -431,7 +431,19 @@ class MyWindow(gtk.Window):
             self.image.set_from_file("/home/dungnt/PythonProjects/images/done.jpg")
         elif line == '###error###\n':
             self.spinner.stop()
-            self.label.set_text(' Error due to:\n SyncDir not found\n or Remote Machine not reachable\n\n You can fix it manually\n Or Reinstall application to fix it!')
+            self.label.set_text(' Error due to:\n Necessary file not found!\n Please reinstall the application to fix it!')
+            self.image.set_from_file("/home/dungnt/PythonProjects/images/error.png")
+        elif line == '###error2###\n':
+            self.spinner.stop()
+            self.label.set_text(' Error due to:\n SyncDir not found!\n Please reinstall the application to fix it!')
+            self.image.set_from_file("/home/dungnt/PythonProjects/images/error.png")
+        elif line == '###error3###\n':
+            self.spinner.stop()
+            self.label.set_text(' Error due to:\n Wrong private key!\n Please reinstall the application to fix it!')
+            self.image.set_from_file("/home/dungnt/PythonProjects/images/error.png")
+        elif line == '###error4###\n':
+            self.spinner.stop()
+            self.label.set_text(' Error due to:\n Remote machine unreachable!\n Please reinstall the application to fix it!')
             self.image.set_from_file("/home/dungnt/PythonProjects/images/error.png")
         else:
             self.spinner.start()
@@ -478,6 +490,18 @@ class MyWindow(gtk.Window):
             self.spinner.stop()
             self.label.set_text(' Error due to:\n SyncDir not found\n or Remote Machine not reachable\n\n You can fix it manually\n Or Reinstall application to fix it!')
             self.image.set_from_file("/home/dungnt/PythonProjects/images/error.png")
+        elif line == '###error2###\n':
+            self.spinner.stop()
+            self.label.set_text(' Error due to:\n SyncDir not found!\n Please reinstall the application to fix it!')
+            self.image.set_from_file("/home/dungnt/PythonProjects/images/error.png")
+        elif line == '###error3###\n':
+            self.spinner.stop()
+            self.label.set_text(' Error due to:\n Wrong private key!\n Please reinstall the application to fix it!')
+            self.image.set_from_file("/home/dungnt/PythonProjects/images/error.png")
+        elif line == '###error4###\n':
+            self.spinner.stop()
+            self.label.set_text(' Error due to:\n Remote machine unreachable!\n Please reinstall the application to fix it!')
+            self.image.set_from_file("/home/dungnt/PythonProjects/images/error.png")
         else:
             self.spinner.start()
             self.label.set_text('Syncing....')
@@ -517,7 +541,7 @@ def main():
   #subprocess.check_output(batcmd,shell=True)
   global processId
   global syncdir
-  processId = subprocess.Popen(["bash", "/home/dungnt/ShellScript/sshsyncapp/sshsyncdir.sh", syncdir]).pid
+  processId = subprocess.Popen(["bash", "/home/dungnt/ShellScript/sshsyncapp/sshsyncdir.sh", syncdir, "/home/dungnt/ShellScript/sshsyncapp", "192.168.1.158", "/home/dungnt/.ssh/id_ed25519_privatekey"]).pid
   print('pid '+str(processId))
   
 

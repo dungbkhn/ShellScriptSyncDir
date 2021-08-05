@@ -1306,8 +1306,8 @@ main(){
 	local chdir=0
 	
 	if [ ! -d "$dir_ori" ] ; then
-		mech "###error###"
-		return 1
+		mech "###error2###"
+		return 2
 	fi
 	
 	if [ ! -d "$memtemp_local" ] ; then
@@ -1331,17 +1331,17 @@ main(){
 			result=$(ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" "$destipv6addr" "mkdir ${memtemp_remote}" 2>&1)
 			cmd=$?
 			mech "mkdir temp at remote ""$cmd"
-			cmd1=$(echo "$result" | grep "No route")
-			if [ "$cmd1" ] ; then
-				mech "No route to remote"
-				mech "###error###"
-				return 1
-			fi
 			cmd1=$(echo "$result" | grep "Permission denied")
 			if [ "$cmd1" ] ; then
 				mech "Wrong key, Permission denied"
-				mech "###error###"
-				return 1
+				mech "###error3###"
+				return 3
+			fi
+			cmd1=$(echo "$result" | grep "No route")
+			if [ "$cmd1" ] ; then
+				mech "No route to remote"
+				mech "###error4###"
+				return 4
 			fi
 			sleep 1
 		done
@@ -1450,8 +1450,8 @@ main(){
 		
 	else
 		mech 'error: key not found, stop!'
-		mech "###error###"
-		return 1
+		mech "###error3###"
+		return 3
 	fi
 	
 	if [ "$chdir" -eq 1 ] ; then
@@ -1464,27 +1464,21 @@ main(){
 		truncate -s 0 "$mainlogfile"
 		
 		if [ ! -d "$dir_ori" ] ; then
-			mech "###error###"
-			return 1
+			mech "###error2###"
+			return 2
 		fi
 		
 		if [ ! -f "$fileprivatekey" ] ; then
-			mech "###error###"
-			return 1
+			mech "###error3###"
+			return 3
 		fi
 		
 		result=$(ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" "$destipv6addr" "ls" 2>&1)
-		cmd1=$(echo "$result" | grep "No route")
-		if [ "$cmd1" ] ; then
-			mech "No route to remote"
-			mech "###error###"
-			return 1
-		fi
 		cmd1=$(echo "$result" | grep "Permission denied")
 		if [ "$cmd1" ] ; then
 			mech "Wrong key, Permission denied"
-			mech "###error###"
-			return 1
+			mech "###error3###"
+			return 3
 		fi
 			
 		while [ "$count" -lt 3 ] ; do
