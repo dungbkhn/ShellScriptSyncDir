@@ -1,9 +1,11 @@
 #!/bin/bash
 #loi khi filesize=0 --> kothe sync
+#./sshsyncdir.sh /home/dungnt/MySyncDir /home/dungnt/ShellScript/sshsyncapp 192.168.1.158 /home/dungnt/.ssh/id_ed25519_privatekey
 shopt -s dotglob
 shopt -s nullglob
 
-appdir_local=/home/dungnt/ShellScript/sshsyncapp
+#appdir_local=/home/dungnt/ShellScript/sshsyncapp
+appdir_local="$2"
 appdir_remote=/home/backup
 
 memtemp_local="$appdir_local"/.temp
@@ -18,10 +20,14 @@ md5_fileC_inremote=md5.c
 md5file=md5
 dir_contains_uploadfiles="$appdir_local"/remotefiles
 
-destipv6addr="backup@192.168.1.158"
-destipv6addr_scp="backup@[192.168.1.158]"
+#destipv6addr="backup@192.168.1.158"
+#destipv6addr_scp="backup@[192.168.1.158]"
 
-fileprivatekey=/home/dungnt/.ssh/id_ed25519_privatekey
+destipv6addr="backup@""$3"
+destipv6addr_scp="backup@[""$3""]"
+
+#fileprivatekey=/home/dungnt/.ssh/id_ed25519_privatekey
+fileprivatekey="$4"
 logtimedir_remote=/home/dungnt/StoreProj/logtime
 logtimefile=logtimefile.txt
 #file mang thong tin ds file trong dir --> up len de so sanh
