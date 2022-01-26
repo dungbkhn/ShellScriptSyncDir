@@ -516,68 +516,31 @@ append_native_file(){
 		
 		
 		if [ "$end" -eq 1 ] ; then
-			#do thoi gian last truncate and rsync
+
 			SECONDS=0
-			
-			for (( loopforcount=0; loopforcount<21; loopforcount+=1 ));
-			do	
-				#vuot timeout
-				if [ "$loopforcount" -eq 20 ] ;  then
-					mech 'truncate end file timeout, nghi dai'
-					return 1
-				fi
-				
-				mech 'begin truncate end file'
-				result=$(ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" "$destipv6addr" "bash ${memtemp_remote}/${truncatefile_inremote} ${tempfilename} ${filenameinhex} 3 ${uploadsize}")
-				cmd=$?
-				mech "truncate end file in remote ""$cmd"
-								
-				if [ "$cmd" -eq 0 ] ; then
-					#thoat vong lap for
-					break
-				else
-					sleep 15			
-				fi	
-			done
-			
 			loopforcount=0
+			
 			while true;
 			do	
 				loopforcount=$(( $loopforcount + 1 ))
 				
 				#vuot timeout
 				if [ "$loopforcount" -eq 20 ] ;  then
-					mech 'uploadfile timeout, nghi dai'
+					mech 'assign date and time timeout, nghi dai'
 					return 1
 				fi
-				#rsync tu khoi phuc khi mat mang, co mang lai
-				mech 'append last of file'		
-				rsync -vah --append --iconv=utf-8,utf-8 --protect-args -e "ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i ${fileprivatekey}" "$dir1"/"$filename" "$destipv6addr_scp":"$tempfilename"
+								
+				dateandtimeinhumanreadable=$(stat -c %y "$dir1"/"$filename")
+				mech "assign date and time:""$dateandtimeinhumanreadable"
+				result=$(ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" "$destipv6addr" "touch -d '${dateandtimeinhumanreadable}' ${tempfilename}")						
 				cmd=$?
-				mech "append last of file in remote ""$cmd"
-				
+				mech "assign date and time in remote ""$cmd"
 				if [ "$cmd" -eq 0 ] ; then
+					#thoat vong lap while
 					break
 				else
-					loopforcount2=0
-					while true; do
-						loopforcount2=$(( $loopforcount2 + 1 ))
-						if [ "$loopforcount2" -eq 16 ] ;  then
-							mech 'truncate file when rsync fail, timeout, nghi dai'
-							return 1
-						fi
-						result=$(ssh -o PasswordAuthentication=no -o StrictHostKeyChecking=no -i "$fileprivatekey" "$destipv6addr" "bash ${memtemp_remote}/${truncatefile_inremote} ${tempfilename} ${filenameinhex} 3 ${uploadsize}")
-						cmd=$?
-
-						mech "run truncate file when rsync fail in remote ""$cmd"
-						
-						if [ "$cmd" -eq 0 ] ; then
-							break
-						else
-							sleep 1
-						fi
-					done	
-				fi
+					sleep 15			
+				fi					
 			done
 
 			mtimeafterup=$(stat "$dir1"/"$filename" --printf='%y\n')
@@ -594,7 +557,7 @@ append_native_file(){
 				truncateparam4=2
 			fi
 			
-			mech "last truncate and rsync elapsed time (using \$SECONDS): $SECONDS seconds"
+			mech "assign datetime elapsed time (using \$SECONDS): $SECONDS seconds"
 		fi
 		
 					
